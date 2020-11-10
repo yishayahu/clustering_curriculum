@@ -4,22 +4,22 @@ import torchvision
 import torchvision.transforms as tvtf
 from sklearn.cluster import KMeans
 import torch.nn as nn
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+my_computer = str(device) == "cpu"
+os.environ["my_computer"] = str(my_computer)
 
+if my_computer == "False":
+    os.system("pip install ImageHash")
+    os.environ["n_cluster"] = "40"
+else:
+    os.environ["n_cluster"] = "10"
 
 from clustered_Sampler import ClusteredSampler
 import utils
 from new_resnet import resnet50
 from trainer import Trainer
 def main():
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    my_computer = str(device) == "cpu"
-    os.environ["my_computer"] = str(my_computer)
 
-    if my_computer == "False":
-        os.system("pip install ImageHash")
-        os.environ["n_cluster"] = "40"
-    else:
-        os.environ["n_cluster"] = "10"
 
     cfar10_labels = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
