@@ -16,7 +16,6 @@ def main():
 
     my_computer = str(device) == "cpu"
     os.environ["my_computer"] = str(my_computer)
-    print(str(my_computer))
     if str(my_computer) == "False":
         os.system("pip install ImageHash")
         os.environ["n_cluster"] = "40"
@@ -40,7 +39,7 @@ def main():
     # create cluster resnet data
     train_set_normal,test_set = torch.utils.data.random_split(cifar10_train_ds, [int(len(cifar10_train_ds) * 0.85), int(len(cifar10_train_ds) * 0.15)])
     train_set_clustered,eval_set = torch.utils.data.random_split(train_set_normal, [int(len(train_set_normal) * 0.80), int(len(train_set_normal) * 0.20)])
-    clustered_smapler = ClusteredSampler(eval_set,start_clustering=0, end_clustering=25000)
+    clustered_smapler = ClusteredSampler(train_set_clustered,start_clustering=0, end_clustering=25000)
     train_dl, eval_dl,test_dl = utils.create_data_loaders([train_set_clustered, eval_set,test_set],[clustered_smapler,None,None])
     train_dls.append(train_dl)
     eval_dls.append(eval_dl)
