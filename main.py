@@ -4,21 +4,21 @@ import torchvision
 import torchvision.transforms as tvtf
 from sklearn.cluster import KMeans
 import torch.nn as nn
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-my_computer = str(device) == "cpu"
-os.environ["my_computer"] = str(my_computer)
-
-if my_computer == "False":
-    os.system("pip install ImageHash")
-    os.environ["n_cluster"] = "40"
-else:
-    os.environ["n_cluster"] = "10"
 
 from clustered_Sampler import ClusteredSampler
 import utils
 from new_resnet import resnet50
 from trainer import Trainer
 def main():
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    my_computer = str(device) == "cpu"
+    os.environ["my_computer"] = str(my_computer)
+
+    if my_computer == "False":
+        os.system("pip install ImageHash")
+        os.environ["n_cluster"] = "40"
+    else:
+        os.environ["n_cluster"] = "10"
 
 
     cfar10_labels = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
@@ -32,6 +32,8 @@ def main():
         evens = list(range(0, len(cifar10_train_ds), 50))
         cifar10_train_ds = torch.utils.data.Subset(cifar10_train_ds, evens)
     models = [resnet50(num_classes=10,clustering_algorithm=KMeans(n_clusters=int(os.environ['n_cluster']), n_init=2, max_iter=50)),resnet50(num_classes=10)]
+    for model in models:
+        model.to(device=device)
     train_dls,eval_dls,test_dls = [],[],[]
     # create cluster resnet data
     train_set_normal,test_set = torch.utils.data.random_split(cifar10_train_ds, [int(len(cifar10_train_ds) * 0.85), int(len(cifar10_train_ds) * 0.15)])
