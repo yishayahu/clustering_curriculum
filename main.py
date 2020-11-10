@@ -13,7 +13,7 @@ from trainer import Trainer
 def main():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
-    print("ttttt")
+
     my_computer = str(device) == "cpu"
     os.environ["my_computer"] = str(my_computer)
 
@@ -22,7 +22,7 @@ def main():
         os.environ["n_cluster"] = "40"
     else:
         os.environ["n_cluster"] = "10"
-
+    print(f"n clustrs is {os.environ['n_cluster']}")
     cfar10_labels = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
     cifar10_train_ds = torchvision.datasets.CIFAR10(
@@ -31,7 +31,7 @@ def main():
 
     )
     if os.environ["my_computer"] == "True":
-        evens = list(range(0, len(cifar10_train_ds), 50))
+        evens = list(range(0, len(cifar10_train_ds), 100))
         cifar10_train_ds = torch.utils.data.Subset(cifar10_train_ds, evens)
     models = [resnet50(num_classes=10,clustering_algorithm=KMeansTF(n_clusters=int(os.environ['n_cluster']), n_init=2, max_iter=50)),resnet50(num_classes=10)]
     for model in models:
@@ -40,7 +40,7 @@ def main():
     # create cluster resnet data
     train_set_normal,test_set = torch.utils.data.random_split(cifar10_train_ds, [int(len(cifar10_train_ds) * 0.85), int(len(cifar10_train_ds) * 0.15)])
     train_set_clustered,eval_set = torch.utils.data.random_split(train_set_normal, [int(len(train_set_normal) * 0.80), int(len(train_set_normal) * 0.20)])
-    clustered_smapler = ClusteredSampler(eval_set,start_clustering=2399, end_clustering=25000)
+    clustered_smapler = ClusteredSampler(eval_set,start_clustering=0, end_clustering=25000)
     train_dl, eval_dl,test_dl = utils.create_data_loaders([train_set_clustered, eval_set,test_set],[clustered_smapler,None,None])
     train_dls.append(train_dl)
     eval_dls.append(eval_dl)

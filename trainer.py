@@ -46,6 +46,7 @@ class Trainer:
         eval_loss_dict = {}
         curr_step = self.curr_steps[idx]
         optimizer = self.optimizers[idx]
+        print(len(dl.dataset))
         for inputs, labels in tqdm(dl,desc=f"model number {idx} in phase:{phase}"):
             if inputs.shape[0] == 1:
                 print("skipped")
