@@ -16,7 +16,7 @@ def main():
 
     my_computer = str(device) == "cpu"
     os.environ["my_computer"] = str(my_computer)
-
+    print(str(my_computer))
     if my_computer == "False":
         os.system("pip install ImageHash")
         os.environ["n_cluster"] = "40"
