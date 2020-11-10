@@ -10,10 +10,7 @@ from clustered_Sampler import ClusteredSampler
 import utils
 from new_resnet import resnet50
 from trainer import Trainer
-
-
-if __name__ == '__main__':
-
+def main():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     my_computer = str(device) == "cpu"
     os.environ["my_computer"] = str(my_computer)
@@ -55,4 +52,9 @@ if __name__ == '__main__':
                       loss_fn= nn.CrossEntropyLoss(),loss_fn_eval=nn.CrossEntropyLoss(reduction="none"),
                       optimizers=optimizers, num_steps=125000)
     trainer.train_models()
+
+
+
+if __name__ == '__main__':
+    main()
 
