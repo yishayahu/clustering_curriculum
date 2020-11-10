@@ -12,6 +12,7 @@ from new_resnet import resnet50
 from trainer import Trainer
 def main():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    print(device)
     my_computer = str(device) == "cpu"
     os.environ["my_computer"] = str(my_computer)
 
