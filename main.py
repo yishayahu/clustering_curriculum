@@ -13,6 +13,7 @@ from trainer import Trainer
 def main():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
+    print("ttttt")
     my_computer = str(device) == "cpu"
     os.environ["my_computer"] = str(my_computer)
 
