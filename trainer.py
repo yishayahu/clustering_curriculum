@@ -88,7 +88,7 @@ class Trainer:
         while True:
             if min(self.curr_steps) > self.num_steps:
                 break
-            idx = np.argmin[self.curr_steps]
+            idx = np.argmin(self.curr_steps)
             assert idx in [0,1] # todo: remove
             for phase in ["train", "eval", "test"]:
                 if phase == "eval" and not self.models[idx].do_clustering():
