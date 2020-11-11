@@ -2,14 +2,15 @@ import os
 import torch
 import torchvision
 import torchvision.transforms as tvtf
-from sklearn.cluster import KMeans
+
 import torch.nn as nn
-from kmeanstf import KMeansTF
+
 
 from clustered_Sampler import ClusteredSampler
 import utils
 from new_resnet import resnet50
 from trainer import Trainer
+import clustering_algorithms
 def main():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
@@ -32,7 +33,7 @@ def main():
     if os.environ["my_computer"] == "True":
         evens = list(range(0, len(cifar10_train_ds), 100))
         cifar10_train_ds = torch.utils.data.Subset(cifar10_train_ds, evens)
-    models = [resnet50(num_classes=10,clustering_algorithm=KMeansTF(n_clusters=int(os.environ['n_cluster']), n_init=2, max_iter=50)),resnet50(num_classes=10)]
+    models = [resnet50(num_classes=10,clustering_algorithm=clustering_algorithms.KmeanSklearn(n_clusters=int(os.environ['n_cluster']), n_init=2, max_iter=50)),resnet50(num_classes=10)]
     for model in models:
         model.to(device=device)
     train_dls,eval_dls,test_dls = [],[],[]

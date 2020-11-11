@@ -228,7 +228,7 @@ class ResNet(nn.Module):
         arrays = []
         for x in self.cluster_dict.values():
             arrays.append(x.cpu().detach().numpy())
-        self.clustering_algorithm.fit(tf.convert_to_tensor(arrays,dtype=tf.float32))
+        self.clustering_algorithm.fit(arrays)
         labels = self.clustering_algorithm.labels_
         to_label = {}
         for idx, k in enumerate(self.cluster_dict.keys()):
