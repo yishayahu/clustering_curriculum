@@ -95,7 +95,7 @@ class Trainer:
                     if phase == "eval" and not self.models[idx].do_clustering():
                         continue
                     curr_time, loss, acc = self.run_epoch(idx, phase)
-                    print(f"phase is {phase}\n loss is {loss}\n acc is {acc}\n done in time {curr_time}")
+                    print(f"phase is {phase}\n loss is {loss}\n acc is {acc}\n done in time {curr_time} \n at step {self.curr_steps[idx]}")
                     print(f"{phase}, {loss},{acc},{curr_time}")
                     self.times[phase][idx].append(curr_time)
                     self.losses[phase][idx].append(loss)
