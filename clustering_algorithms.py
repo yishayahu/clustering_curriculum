@@ -12,7 +12,7 @@ class AbstractClusteringAlgorithm:
         raise NotImplemented()
 
     @property
-    def labels(self):
+    def labels_(self):
         raise NotImplemented()
 
 
@@ -24,7 +24,7 @@ class KmeanSklearn(AbstractClusteringAlgorithm):
         self.model.fit(x)
 
     @property
-    def labels(self):
+    def labels_(self):
         return self.model.labels_
 
 
@@ -36,5 +36,5 @@ class KMeansTF(AbstractClusteringAlgorithm):
         self.model.fit(tf.convert_to_tensor(x, dtype=tf.float32))
 
     @property
-    def labels(self):
+    def labels_(self):
         return self.model.labels_
