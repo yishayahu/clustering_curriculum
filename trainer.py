@@ -22,10 +22,12 @@ class Trainer:
         self.times = {}
         self.losses = {}
         self.accuracies = {}
+        self.steps_for_acc_loss_and_time = {}
         for phase in ["train", "eval", "test"]:
             self.times[phase] = [[] for _ in models]
             self.losses[phase] = [[] for _ in models]
             self.accuracies[phase] = [[] for _ in models]
+            self.steps_for_acc_loss_and_time[phase] = [[] for _ in models]
 
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -98,6 +100,8 @@ class Trainer:
                     self.times[phase][idx].append(curr_time)
                     self.losses[phase][idx].append(loss)
                     self.accuracies[phase][idx].append(acc.item())
+                    self.steps_for_acc_loss_and_time[phase][idx].append(self.curr_steps[idx])
             json.dump(self.times, open("times.json", 'w'))
             json.dump(self.losses, open("losses.json", 'w'))
             json.dump(self.accuracies, open("accuracies.json", 'w'))
+            json.dump(self.steps_for_acc_loss_and_time, open("accuracies.json", 'w'))
