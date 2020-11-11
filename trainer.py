@@ -88,18 +88,17 @@ class Trainer:
         while True:
             if min(self.curr_steps) > self.num_steps:
                 break
-            for idx in range(len(self.models)):
-                if self.curr_steps[idx] > self.num_steps:
+            idx = np.argmin[self.curr_steps]
+            assert idx in [0,1] # todo: remove
+            for phase in ["train", "eval", "test"]:
+                if phase == "eval" and not self.models[idx].do_clustering():
                     continue
-                for phase in ["train", "eval", "test"]:
-                    if phase == "eval" and not self.models[idx].do_clustering():
-                        continue
-                    curr_time, loss, acc = self.run_epoch(idx, phase)
-                    print(f"phase is {phase}\n loss is {loss}\n acc is {acc}\n done in time {curr_time} \n at step {self.curr_steps[idx]}")
-                    self.times[phase][idx].append(curr_time)
-                    self.losses[phase][idx].append(loss)
-                    self.accuracies[phase][idx].append(acc.item())
-                    self.steps_for_acc_loss_and_time[phase][idx].append(self.curr_steps[idx])
+                curr_time, loss, acc = self.run_epoch(idx, phase)
+                print(f"phase is {phase}\n loss is {loss}\n acc is {acc}\n done in time {curr_time} \n at step {self.curr_steps[idx]}")
+                self.times[phase][idx].append(curr_time)
+                self.losses[phase][idx].append(loss)
+                self.accuracies[phase][idx].append(acc.item())
+                self.steps_for_acc_loss_and_time[phase][idx].append(self.curr_steps[idx])
             json.dump(self.times, open("times.json", 'w'))
             json.dump(self.losses, open("losses.json", 'w'))
             json.dump(self.accuracies, open("accuracies.json", 'w'))
