@@ -46,7 +46,7 @@ def main():
     eval_dls.append(eval_dl)
     test_dls.append(test_dl)
     # normal resnet data
-    train_dl, eval_dl,test_dl = utils.create_data_loaders([train_set_normal, [],test_set],[clustered_smapler,None,None])
+    train_dl, eval_dl,test_dl = utils.create_data_loaders([train_set_normal, [],test_set],[None,None,None])
     train_dls.append(train_dl)
     eval_dls.append(eval_dl)
     test_dls.append(test_dl)
