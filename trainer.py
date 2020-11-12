@@ -48,8 +48,8 @@ class Trainer:
         eval_loss_dict = {}
         curr_step = self.curr_steps[idx]
         optimizer = self.optimizers[idx]
-        print(len(dl.dataset))
-        for inputs, labels in tqdm(dl,desc=f"model number {idx} in phase:{phase}"):
+        print(f"model number {idx} in phase:{phase}")
+        for inputs, labels in tqdm(dl):
             if inputs.shape[0] == 1:
                 print("skipped")
                 continue
@@ -102,4 +102,4 @@ class Trainer:
             json.dump(self.times, open("times.json", 'w'))
             json.dump(self.losses, open("losses.json", 'w'))
             json.dump(self.accuracies, open("accuracies.json", 'w'))
-            json.dump(self.steps_for_acc_loss_and_time, open("accuracies.json", 'w'))
+            json.dump(self.steps_for_acc_loss_and_time, open("steps.json", 'w'))
