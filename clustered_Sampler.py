@@ -1,4 +1,4 @@
-import imagehash as imagehash
+from utils import get_md5sum
 import numpy as np
 import torch
 import random
@@ -47,7 +47,7 @@ class ClusteredSampler(torch.utils.data.Sampler):
         for idx in indexes:
             img, label = self.ds[idx]
             if self.do_dist and self.cluster_dict:
-                hashed = imagehash.average_hash(F.to_pil_image(img.cpu()))
+                hashed = get_md5sum(img.cpu().numpy.tobytes())
                 cluster = self.cluster_dict[str(hashed)]
                 if cluster in curr_hiererchy:
                     yield idx

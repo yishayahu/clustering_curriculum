@@ -18,7 +18,6 @@ def main():
     my_computer = str(device) == "cpu"
     os.environ["my_computer"] = str(my_computer)
     if str(my_computer) == "False":
-        os.system("pip install ImageHash")
         os.environ["n_cluster"] = "40"
     else:
         os.environ["n_cluster"] = "10"

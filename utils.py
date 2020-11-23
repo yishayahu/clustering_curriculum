@@ -1,5 +1,5 @@
 import os
-
+import hashlib
 import torch
 
 
@@ -15,4 +15,10 @@ def create_data_loaders(datasets, samplers):
             dls.append(None)
     return tuple(dls)
 
+
+
+def get_md5sum(bytes1):
+    hasher = hashlib.md5()
+    hasher.update(bytes1)
+    return hasher.hexdigest()
 

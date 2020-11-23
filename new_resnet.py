@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torchvision.transforms.functional as F
-import imagehash
+from utils import get_md5sum
 import tensorflow as tf
 
 model_urls = {
@@ -213,7 +213,7 @@ class ResNet(nn.Module):
         x = torch.flatten(x, 1)
         if self.clustering_algorithm is not None:
             for image_index in range(x.shape[0]):
-                hashed = imagehash.average_hash(F.to_pil_image(orig_x[image_index].cpu()))
+                hashed = get_md5sum(orig_x[image_index].cpu().numpy().tobytes)
                 self.cluster_dict[str(hashed)] = x[image_index]
         x = self.fc(x)
 

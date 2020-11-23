@@ -3,7 +3,7 @@ import time
 
 import torch
 import torchvision.transforms.functional as F
-import imagehash
+from utils import get_md5sum
 import numpy as np
 from tqdm import tqdm
 
@@ -72,7 +72,7 @@ class Trainer:
                 elif phase == "eval" and model.do_clustering():
                     losses = self.loss_fn_eval(outputs, labels)
                     for curr_input, temp_loss in zip(inputs, losses):
-                        hashed = imagehash.average_hash(F.to_pil_image(curr_input.cpu()))
+                        hashed = get_md5sum(curr_input.cpu().numpy().tobytes())
                         eval_loss_dict[str(hashed)] = temp_loss
                 running_loss += loss.item() * inputs.size(0)
                 running_corrects += torch.sum(preds == labels.data)
