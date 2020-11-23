@@ -18,7 +18,7 @@ def create_data_loaders(datasets, samplers):
 
 
 def get_md5sum(bytes1):
-    hasher = hashlib.md5()
-    hasher.update(bytes1)
+    hasher = hashlib.md5(bytes1)
+    # hasher.update(bytes1)
     return hasher.hexdigest()
 

@@ -213,7 +213,7 @@ class ResNet(nn.Module):
         x = torch.flatten(x, 1)
         if self.clustering_algorithm is not None:
             for image_index in range(x.shape[0]):
-                hashed = get_md5sum(orig_x[image_index].cpu().numpy().tobytes)
+                hashed = get_md5sum(orig_x[image_index].cpu().numpy().tobytes())
                 self.cluster_dict[str(hashed)] = x[image_index]
         x = self.fc(x)
 
