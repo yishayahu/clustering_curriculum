@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.cluster import KMeans
 from sklearn.cluster import Birch
 from kmeanstf import KMeansTF
-import tensorflow as tf
+
 
 
 class AbstractClusteringAlgorithm:
@@ -43,6 +43,7 @@ class BirchSklearn(AbstractClusteringAlgorithm):
 
 class KMeansTF(AbstractClusteringAlgorithm):
     def __init__(self, **kwargs):
+        import tensorflow as tf
         self.model = KMeansTF(**kwargs)
 
     def fit(self, x: [np.ndarray]):

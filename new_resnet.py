@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import torchvision.transforms.functional as F
 from utils import get_md5sum
-import tensorflow as tf
 
 model_urls = {
     'resnet18': 'https://download.pytorch.org/models/resnet18-5c106cde.pth',
