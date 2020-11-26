@@ -45,7 +45,7 @@ def main():
                                                                                   int(len(cifar10_train_ds) * 0.15)])
     train_set_clustered, eval_set = torch.utils.data.random_split(train_set_normal, [int(len(train_set_normal) * 0.80),
                                                                                      int(len(train_set_normal) * 0.20)])
-    clustered_smapler = ClusteredSampler(train_set_clustered, start_clustering=0, end_clustering=40000)
+    clustered_smapler = ClusteredSampler(train_set_clustered, start_clustering=5000, end_clustering=45000)
     train_dl, eval_dl, test_dl = utils.create_data_loaders([train_set_clustered, eval_set, test_set],
                                                            [clustered_smapler, None, None])
     train_dls.append(train_dl)
