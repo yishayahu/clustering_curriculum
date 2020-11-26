@@ -35,7 +35,7 @@ def main(exp_name="not_pretrained"):
         cifar10_train_ds = torch.utils.data.Subset(cifar10_train_ds, evens)
     models = [resnet18(num_classes=10,
                        clustering_algorithm=clustering_algorithms.BirchSklearn(n_clusters=int(os.environ['n_cluster']),
-                                                                               n_init=2, max_iter=50),
+                                                                               n_init=10, max_iter=80),
                        pretrained=False),
               resnet18(num_classes=10, pretrained=False)]
     for model in models:
