@@ -31,7 +31,7 @@ class Tb:
         from torch.utils.tensorboard import SummaryWriter
         self.writers = [SummaryWriter('runs/model_1'),SummaryWriter('runs/model_2')]
 
-        subprocess.Popen("tensorboard --logdir=runs")
+
     def add_images(self,images):
         raise Exception("not implemented")
         img_grid = torchvision.utils.make_grid(images)
