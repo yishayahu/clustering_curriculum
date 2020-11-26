@@ -1,9 +1,10 @@
 import json
+import subprocess
 import time
 
 import torch
 import torchvision.transforms.functional as F
-from utils import get_md5sum
+from utils import get_md5sum,Tb
 import numpy as np
 from tqdm import tqdm
 
@@ -23,6 +24,8 @@ class Trainer:
         self.losses = {}
         self.accuracies = {}
         self.steps_for_acc_loss_and_time = {}
+        self.tb = Tb()
+        # subprocess.run("tensorboard --logdir=runs")
         for phase in ["train", "eval", "test"]:
             self.times[phase] = [[] for _ in models]
             self.losses[phase] = [[] for _ in models]
@@ -53,7 +56,6 @@ class Trainer:
             if inputs.shape[0] == 1:
                 print("skipped")
                 continue
-
             inputs = inputs.to(self.device)
             labels = labels.to(self.device)
 
@@ -83,6 +85,23 @@ class Trainer:
         if phase == "eval" and model.do_clustering():
             self.train_dls[idx].sampler.create_distribiouns(model.get_clusters(), eval_loss_dict, curr_step)
         return time_elapsed, epoch_loss, epoch_acc
+    def save_epoch_results(self,phase,idx,curr_time,loss,acc,step):
+        def save_results_to_json():
+            json.dump(self.times, open("times.json", 'w'))
+            json.dump(self.losses, open("losses.json", 'w'))
+            json.dump(self.accuracies, open("accuracies.json", 'w'))
+            json.dump(self.steps_for_acc_loss_and_time, open("steps.json", 'w'))
+        def save_results_to_tb():
+            self.tb.add_scalar(idx,phase + " loss",loss,step)
+            self.tb.add_scalar(idx,phase + " curr_time",curr_time,step)
+            self.tb.add_scalar(idx,phase + " acc",acc,step)
+        self.times[phase][idx].append(curr_time)
+        self.losses[phase][idx].append(loss)
+        self.accuracies[phase][idx].append(acc.item())
+        self.steps_for_acc_loss_and_time[phase][idx].append(self.curr_steps[idx])
+        save_results_to_json()
+        save_results_to_tb()
+
 
     def train_models(self):
         while True:
@@ -95,11 +114,6 @@ class Trainer:
                     continue
                 curr_time, loss, acc = self.run_epoch(idx, phase)
                 print(f"phase is {phase}\n loss is {loss}\n acc is {acc}\n done in time {curr_time} \n at step {self.curr_steps[idx]}")
-                self.times[phase][idx].append(curr_time)
-                self.losses[phase][idx].append(loss)
-                self.accuracies[phase][idx].append(acc.item())
-                self.steps_for_acc_loss_and_time[phase][idx].append(self.curr_steps[idx])
-            json.dump(self.times, open("times.json", 'w'))
-            json.dump(self.losses, open("losses.json", 'w'))
-            json.dump(self.accuracies, open("accuracies.json", 'w'))
-            json.dump(self.steps_for_acc_loss_and_time, open("steps.json", 'w'))
+                self.save_epoch_results(phase,idx,curr_time,loss,acc,self.curr_steps[idx])
+
+

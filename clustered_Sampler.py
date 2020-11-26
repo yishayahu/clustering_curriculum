@@ -14,7 +14,7 @@ class ClusteredSampler(torch.utils.data.Sampler):
         self.cluster_dict = None
         self.hiererchy = []
         self.do_dist = False
-        self.epoch_counter = 0
+        self.center = 0
         self.n_cluster = int(os.environ['n_cluster'])
 
     def create_distribiouns(self, cluster_dict, eval_loss_dict, step):
@@ -39,17 +39,22 @@ class ClusteredSampler(torch.utils.data.Sampler):
             self.cluster_dict = cluster_dict
 
     def __iter__(self):
-        self.epoch_counter += 1
         indexes = list(range(len(self.ds)))
         random.shuffle(indexes)
         if self.do_dist:
-            curr_hiererchy = set(self.hiererchy[-int((self.n_cluster * self.epoch_counter) / 20):])
+
+            curr_hiererchy = {}
+            for i in range(self.n_cluster):
+                curr_hiererchy[self.hiererchy[i]] = np.exp(-0.2 * abs(self.center-i))
+            self.center += 1
+            self.center = min(self.center, self.n_cluster)
         for idx in indexes:
             img, label = self.ds[idx]
             if self.do_dist and self.cluster_dict:
-                hashed = get_md5sum(img.cpu().numpy.tobytes())
+                hashed = get_md5sum(img.cpu().numpy().tobytes())
                 cluster = self.cluster_dict[str(hashed)]
-                if cluster in curr_hiererchy:
+                assert cluster in curr_hiererchy
+                if random.random() < curr_hiererchy[cluster]:
                     yield idx
             else:
                 yield idx

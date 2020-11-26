@@ -1,6 +1,7 @@
 import os
 import hashlib
 import torch
+import torchvision
 
 
 def create_data_loaders(datasets, samplers):
@@ -21,4 +22,15 @@ def get_md5sum(bytes1):
     hasher = hashlib.md5(bytes1)
     # hasher.update(bytes1)
     return hasher.hexdigest()
+
+
+class Tb:
+    def __init__(self):
+        from torch.utils.tensorboard import SummaryWriter
+        self.writers = [SummaryWriter('runs/model_1'),SummaryWriter('runs/model_2')]
+    def add_images(self,images):
+        img_grid = torchvision.utils.make_grid(images)
+        self.writer.add_image("batch",img_grid)
+    def add_scalar(self,idx,*args):
+        self.writers[idx].add_scalar(*args)
 
