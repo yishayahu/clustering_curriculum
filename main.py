@@ -12,7 +12,7 @@ from trainer import Trainer
 import clustering_algorithms
 
 
-def main(exp_name="not_pretrained"):
+def main(exp_name="not_pretrained_start_from_easy"):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
 
