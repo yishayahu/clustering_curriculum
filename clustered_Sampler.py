@@ -14,8 +14,9 @@ class ClusteredSampler(torch.utils.data.Sampler):
         self.cluster_dict = None
         self.hiererchy = []
         self.do_dist = False
-        self.center = 0
+
         self.n_cluster = int(os.environ['n_cluster'])
+        self.center = self.n_cluster
         self.tb = tb
 
     def create_distribiouns(self, cluster_dict, eval_loss_dict, step):
@@ -52,10 +53,11 @@ class ClusteredSampler(torch.utils.data.Sampler):
         if self.do_dist:
             print(self.center)
             curr_hiererchy = {}
+            self.center -= 1
             for i in range(self.n_cluster):
                 curr_hiererchy[self.hiererchy[i]] = np.exp(-0.2 * abs(self.center - i))
-            self.center += 1
-            self.center = min(self.center, self.n_cluster)
+
+            self.center = max(self.center, 0)
         diffs = {}
         for i in range(self.n_cluster):
             diffs[i] = []
