@@ -37,7 +37,12 @@ class ClusteredSampler(torch.utils.data.Sampler):
                 self.hiererchy.append(max_idx)
                 losses[max_idx] = -1
             self.cluster_dict = cluster_dict
-
+    def get_cluster(self,inp):
+        if self.do_dist:
+            hashed = get_md5sum(inp.cpu().numpy().tobytes())
+            cluster = self.cluster_dict[str(hashed)]
+            return cluster, self.hiererchy.index(cluster)
+        return None
     def __iter__(self):
         indexes = list(range(len(self.ds)))
         random.shuffle(indexes)

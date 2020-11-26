@@ -35,8 +35,8 @@ def main():
         cifar10_train_ds = torch.utils.data.Subset(cifar10_train_ds, evens)
     models = [resnet18(num_classes=10,
                        clustering_algorithm=clustering_algorithms.BirchSklearn(n_clusters=int(os.environ['n_cluster']),
-                                                                               n_init=2, max_iter=50),pretrained=True),
-              resnet18(num_classes=10,pretrained=True)]
+                                                                               n_init=2, max_iter=50),pretrained=False),
+              resnet18(num_classes=10,pretrained=False)]
     for model in models:
         model.to(device=device)
     train_dls, eval_dls, test_dls = [], [], []
@@ -62,7 +62,7 @@ def main():
                                    amsgrad=False)]
     trainer = Trainer(models=models, train_dls=train_dls, eval_dls=eval_dls, test_dls=test_dls,
                       loss_fn=nn.CrossEntropyLoss(), loss_fn_eval=nn.CrossEntropyLoss(reduction="none"),
-                      optimizers=optimizers, num_steps=50000)
+                      optimizers=optimizers, num_steps=50000,exp_name = "not_pretrained")
     trainer.train_models()
 
 

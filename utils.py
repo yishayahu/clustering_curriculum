@@ -19,7 +19,6 @@ def create_data_loaders(datasets, samplers):
     return tuple(dls)
 
 
-
 def get_md5sum(bytes1):
     hasher = hashlib.md5(bytes1)
     # hasher.update(bytes1)
@@ -27,15 +26,13 @@ def get_md5sum(bytes1):
 
 
 class Tb:
-    def __init__(self):
+    def __init__(self, exp_name):
         from torch.utils.tensorboard import SummaryWriter
-        self.writers = [SummaryWriter('runs/model_1'),SummaryWriter('runs/model_2')]
+        self.writers = [SummaryWriter(f'runs/{exp_name}_1'), SummaryWriter(f'runs/{exp_name}_2')]
 
-
-    def add_images(self,images):
-        raise Exception("not implemented")
+    def add_images(self, idx, images, title,step):
         img_grid = torchvision.utils.make_grid(images)
-        self.writer.add_image("batch",img_grid)
-    def add_scalar(self,idx,*args):
-        self.writers[idx].add_scalar(*args)
+        self.writers[idx].add_image(title, img_grid,step)
 
+    def add_scalar(self, idx, *args):
+        self.writers[idx].add_scalar(*args)

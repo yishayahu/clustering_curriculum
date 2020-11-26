@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 
 class Trainer:
-    def __init__(self, models, train_dls, eval_dls, test_dls, loss_fn, loss_fn_eval, optimizers, num_steps):
+    def __init__(self, models, train_dls, eval_dls, test_dls, loss_fn, loss_fn_eval, optimizers, num_steps,exp_name):
         self.models = models
         self.train_dls = train_dls
         self.eval_dls = eval_dls
@@ -24,7 +24,7 @@ class Trainer:
         self.losses = {}
         self.accuracies = {}
         self.steps_for_acc_loss_and_time = {}
-        self.tb = Tb()
+        self.tb = Tb(exp_name =exp_name)
 
         for phase in ["train", "eval", "test"]:
             self.times[phase] = [[] for _ in models]
@@ -71,6 +71,15 @@ class Trainer:
                     curr_step += 1
                     loss.backward()
                     optimizer.step()
+                    if model.do_clustering():
+                        cluster_to_img_dict = {}
+                        for input1 in inputs:
+                            cluster = self.train_dls[idx].sampler.get_cluster(input1)
+                            if cluster:
+                                if cluster not in   cluster_to_img_dict:
+                                    cluster_to_img_dict[cluster] = []
+                                cluster_to_img_dict[cluster].append(input1)
+                        [self.tb.add_images(idx=idx,title =str(k),images = v,step=curr_step) for k,v in cluster_to_img_dict.items()]
                 elif phase == "eval" and model.do_clustering():
                     losses = self.loss_fn_eval(outputs, labels)
                     for curr_input, temp_loss in zip(inputs, losses):
