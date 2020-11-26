@@ -23,7 +23,7 @@ class ClusteredSampler(torch.utils.data.Sampler):
         losses = np.zeros(self.n_cluster)
         amounts = np.zeros(self.n_cluster)
         self.step = step
-        self.do_dist = self.start_clustering <= step <= self.end_clustering
+        self.do_dist = self.start_clustering <= step <= self.end_clustering and self.center > 0
         if self.do_dist:
             for k, v in eval_loss_dict.items():
                 losses[cluster_dict[k]] += v
@@ -54,10 +54,9 @@ class ClusteredSampler(torch.utils.data.Sampler):
             print(self.center)
             curr_hiererchy = {}
             self.center -= 1
-            for i in range(self.n_cluster):
-                curr_hiererchy[self.hiererchy[i]] = np.exp(-0.2 * abs(self.center - i))
-
-            self.center = max(self.center, 0)
+            for i in range(self.n_cluster): # dont forget do only one clustrign # todo:
+                curr_hiererchy[self.hiererchy[i]] = np.exp(-0.2 * abs(self.center - i)) if i < self.center else 1
+            # self.center = max(self.center, 0)
         diffs = {}
         for i in range(self.n_cluster):
             diffs[i] = []
@@ -76,5 +75,5 @@ class ClusteredSampler(torch.utils.data.Sampler):
                 yield idx
         for k,v in diffs.items():
             if v:
-                self.tb.add_images(1,images=v,title=str(k),step=self.center)
+                self.tb.add_images(1,images=v,title=str(k),step=self.n_cluster - self.center)
         # raise StopIteration
