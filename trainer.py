@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 import time
 
@@ -82,7 +83,12 @@ class Trainer:
         epoch_loss = running_loss / len(dl.dataset)
         epoch_acc = running_corrects.double() / len(dl.dataset)
         if phase == "eval" and model.do_clustering():
-            self.train_dls[idx].sampler.create_distribiouns(model.get_clusters(), eval_loss_dict, curr_step)
+            ret_value = self.train_dls[idx].sampler.create_distribiouns(model.get_clusters(), eval_loss_dict, curr_step)
+            if ret_value == "done":
+                model.clustering_algorithm = None
+                self.train_dls[idx] = torch.utils.data.DataLoader(
+                    self.train_dls[idx].dataset + self.eval_dls[idx].dataset, batch_size=32, shuffle=True,
+                    num_workers=0 if os.environ["my_computer"] == "True" else 2)
         return time_elapsed, epoch_loss, epoch_acc
     def save_epoch_results(self,phase,idx,curr_time,loss,acc,step):
         def save_results_to_json():

@@ -19,11 +19,14 @@ class ClusteredSampler(torch.utils.data.Sampler):
         self.center = self.n_cluster
         self.tb = tb
 
+
     def create_distribiouns(self, cluster_dict, eval_loss_dict, step):
         losses = np.zeros(self.n_cluster)
         amounts = np.zeros(self.n_cluster)
         self.step = step
         self.do_dist = self.start_clustering <= step <= self.end_clustering and self.center > 0
+        if self.center <= 0 or step > self.end_clustering:
+            return "done"
         if self.do_dist:
             for k, v in eval_loss_dict.items():
                 losses[cluster_dict[k]] += v
@@ -39,6 +42,7 @@ class ClusteredSampler(torch.utils.data.Sampler):
                 self.hiererchy.append(max_idx)
                 losses[max_idx] = -1
             self.cluster_dict = cluster_dict
+        return "working"
 
     def get_cluster(self, inp):
         if self.do_dist:
@@ -75,5 +79,5 @@ class ClusteredSampler(torch.utils.data.Sampler):
                 yield idx
         for k,v in diffs.items():
             if v:
-                self.tb.add_images(1,images=v,title=str(k),step=self.n_cluster - self.center)
+                self.tb.add_images(0,images=v,title=str(k),step=self.n_cluster - self.center)
         # raise StopIteration
