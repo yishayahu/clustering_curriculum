@@ -25,7 +25,7 @@ class Trainer:
         self.accuracies = {}
         self.steps_for_acc_loss_and_time = {}
         self.tb = Tb()
-        # subprocess.run("tensorboard --logdir=runs")
+
         for phase in ["train", "eval", "test"]:
             self.times[phase] = [[] for _ in models]
             self.losses[phase] = [[] for _ in models]

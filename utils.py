@@ -1,5 +1,7 @@
 import os
 import hashlib
+import subprocess
+
 import torch
 import torchvision
 
@@ -28,7 +30,10 @@ class Tb:
     def __init__(self):
         from torch.utils.tensorboard import SummaryWriter
         self.writers = [SummaryWriter('runs/model_1'),SummaryWriter('runs/model_2')]
+
+        subprocess.Popen("tensorboard --logdir=runs")
     def add_images(self,images):
+        raise Exception("not implemented")
         img_grid = torchvision.utils.make_grid(images)
         self.writer.add_image("batch",img_grid)
     def add_scalar(self,idx,*args):
