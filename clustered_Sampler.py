@@ -50,6 +50,7 @@ class ClusteredSampler(torch.utils.data.Sampler):
         indexes = list(range(len(self.ds)))
         random.shuffle(indexes)
         if self.do_dist:
+            print(self.center)
             curr_hiererchy = {}
             for i in range(self.n_cluster):
                 curr_hiererchy[self.hiererchy[i]] = np.exp(-0.2 * abs(self.center - i))

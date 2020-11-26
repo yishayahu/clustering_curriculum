@@ -12,7 +12,7 @@ from trainer import Trainer
 import clustering_algorithms
 
 
-def main(exp_name):
+def main(exp_name="not_pretrained"):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
 
@@ -47,7 +47,7 @@ def main(exp_name):
     train_set_clustered, eval_set = torch.utils.data.random_split(train_set_normal, [int(len(train_set_normal) * 0.80),
                                                                                      int(len(train_set_normal) * 0.20)])
     tb = utils.Tb(exp_name=exp_name)
-    clustered_smapler = ClusteredSampler(train_set_clustered, start_clustering=5000, end_clustering=45000, tb=tb)
+    clustered_smapler = ClusteredSampler(train_set_clustered, start_clustering=0, end_clustering=45000, tb=tb)
     train_dl, eval_dl, test_dl = utils.create_data_loaders([train_set_clustered, eval_set, test_set],
                                                            [clustered_smapler, None, None])
     train_dls.append(train_dl)
