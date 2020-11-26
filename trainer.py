@@ -6,11 +6,10 @@ import torch
 import torchvision.transforms.functional as F
 from utils import get_md5sum,Tb
 import numpy as np
-from tqdm import tqdm
 
 
 class Trainer:
-    def __init__(self, models, train_dls, eval_dls, test_dls, loss_fn, loss_fn_eval, optimizers, num_steps,exp_name):
+    def __init__(self, models, train_dls, eval_dls, test_dls, loss_fn, loss_fn_eval, optimizers, num_steps,tb):
         self.models = models
         self.train_dls = train_dls
         self.eval_dls = eval_dls
@@ -24,7 +23,7 @@ class Trainer:
         self.losses = {}
         self.accuracies = {}
         self.steps_for_acc_loss_and_time = {}
-        self.tb = Tb(exp_name =exp_name)
+        self.tb = tb
 
         for phase in ["train", "eval", "test"]:
             self.times[phase] = [[] for _ in models]
@@ -51,8 +50,8 @@ class Trainer:
         eval_loss_dict = {}
         curr_step = self.curr_steps[idx]
         optimizer = self.optimizers[idx]
-        print(f"model number {idx} in phase:{phase}")
-        for inputs, labels in tqdm(dl):
+
+        for inputs, labels in dl:
             if inputs.shape[0] == 1:
                 print("skipped")
                 continue
@@ -71,15 +70,6 @@ class Trainer:
                     curr_step += 1
                     loss.backward()
                     optimizer.step()
-                    if model.do_clustering():
-                        cluster_to_img_dict = {}
-                        for input1 in inputs:
-                            cluster = self.train_dls[idx].sampler.get_cluster(input1)
-                            if cluster:
-                                if cluster not in   cluster_to_img_dict:
-                                    cluster_to_img_dict[cluster] = []
-                                cluster_to_img_dict[cluster].append(input1)
-                        [self.tb.add_images(idx=idx,title =str(k),images = v,step=curr_step) for k,v in cluster_to_img_dict.items()]
                 elif phase == "eval" and model.do_clustering():
                     losses = self.loss_fn_eval(outputs, labels)
                     for curr_input, temp_loss in zip(inputs, losses):
@@ -122,7 +112,6 @@ class Trainer:
                 if phase == "eval" and not self.models[idx].do_clustering():
                     continue
                 curr_time, loss, acc = self.run_epoch(idx, phase)
-                print(f"phase is {phase}\n loss is {loss}\n acc is {acc}\n done in time {curr_time} \n at step {self.curr_steps[idx]}")
                 self.save_epoch_results(phase,idx,curr_time,loss,acc,self.curr_steps[idx])
 
 

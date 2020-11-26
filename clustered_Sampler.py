@@ -7,7 +7,7 @@ import torchvision.transforms.functional as F
 
 
 class ClusteredSampler(torch.utils.data.Sampler):
-    def __init__(self, data_source, start_clustering, end_clustering):
+    def __init__(self, data_source, start_clustering, end_clustering, tb):
         self.start_clustering = start_clustering
         self.end_clustering = end_clustering
         self.ds = data_source
@@ -16,6 +16,7 @@ class ClusteredSampler(torch.utils.data.Sampler):
         self.do_dist = False
         self.center = 0
         self.n_cluster = int(os.environ['n_cluster'])
+        self.tb = tb
 
     def create_distribiouns(self, cluster_dict, eval_loss_dict, step):
         losses = np.zeros(self.n_cluster)
@@ -37,31 +38,40 @@ class ClusteredSampler(torch.utils.data.Sampler):
                 self.hiererchy.append(max_idx)
                 losses[max_idx] = -1
             self.cluster_dict = cluster_dict
-    def get_cluster(self,inp):
+
+    def get_cluster(self, inp):
         if self.do_dist:
             hashed = get_md5sum(inp.cpu().numpy().tobytes())
             cluster = self.cluster_dict[str(hashed)]
-            return cluster, self.hiererchy.index(cluster)
+            return cluster
         return None
+
     def __iter__(self):
         indexes = list(range(len(self.ds)))
         random.shuffle(indexes)
         if self.do_dist:
-
             curr_hiererchy = {}
             for i in range(self.n_cluster):
-                curr_hiererchy[self.hiererchy[i]] = np.exp(-0.2 * abs(self.center-i))
+                curr_hiererchy[self.hiererchy[i]] = np.exp(-0.2 * abs(self.center - i))
             self.center += 1
             self.center = min(self.center, self.n_cluster)
+        diffs = {}
+        for i in range(self.n_cluster):
+            diffs[i] = []
         for idx in indexes:
             img, label = self.ds[idx]
             if self.do_dist and self.cluster_dict:
                 hashed = get_md5sum(img.cpu().numpy().tobytes())
                 cluster = self.cluster_dict[str(hashed)]
                 assert cluster in curr_hiererchy
-                randi =random.random()
-                if  randi< curr_hiererchy[cluster]:
+                if len(diffs[self.hiererchy.index(cluster)]) < 20:
+                    diffs[self.hiererchy.index(cluster)].append(img)
+                randi = random.random()
+                if randi < curr_hiererchy[cluster]:
                     yield idx
             else:
                 yield idx
+        for k,v in diffs.items():
+            if v:
+                self.tb.add_images(1,images=v,title=str(k),step=self.center)
         # raise StopIteration
