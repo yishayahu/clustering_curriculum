@@ -31,7 +31,7 @@ def main():
 
     )
     if os.environ["my_computer"] == "True":
-        evens = list(range(0, len(cifar10_train_ds), 100))
+        evens = list(range(0, len(cifar10_train_ds), 50))
         cifar10_train_ds = torch.utils.data.Subset(cifar10_train_ds, evens)
     models = [resnet18(num_classes=10,
                        clustering_algorithm=clustering_algorithms.BirchSklearn(n_clusters=int(os.environ['n_cluster']),
@@ -45,7 +45,7 @@ def main():
                                                                                   int(len(cifar10_train_ds) * 0.15)])
     train_set_clustered, eval_set = torch.utils.data.random_split(train_set_normal, [int(len(train_set_normal) * 0.80),
                                                                                      int(len(train_set_normal) * 0.20)])
-    clustered_smapler = ClusteredSampler(train_set_clustered, start_clustering=0, end_clustering=60000)
+    clustered_smapler = ClusteredSampler(train_set_clustered, start_clustering=0, end_clustering=40000)
     train_dl, eval_dl, test_dl = utils.create_data_loaders([train_set_clustered, eval_set, test_set],
                                                            [clustered_smapler, None, None])
     train_dls.append(train_dl)
@@ -62,7 +62,7 @@ def main():
                                    amsgrad=False)]
     trainer = Trainer(models=models, train_dls=train_dls, eval_dls=eval_dls, test_dls=test_dls,
                       loss_fn=nn.CrossEntropyLoss(), loss_fn_eval=nn.CrossEntropyLoss(reduction="none"),
-                      optimizers=optimizers, num_steps=125000)
+                      optimizers=optimizers, num_steps=50000)
     trainer.train_models()
 
 

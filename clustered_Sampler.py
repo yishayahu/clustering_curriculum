@@ -54,7 +54,8 @@ class ClusteredSampler(torch.utils.data.Sampler):
                 hashed = get_md5sum(img.cpu().numpy().tobytes())
                 cluster = self.cluster_dict[str(hashed)]
                 assert cluster in curr_hiererchy
-                if random.random() < curr_hiererchy[cluster]:
+                randi =random.random()
+                if  randi< curr_hiererchy[cluster]:
                     yield idx
             else:
                 yield idx
