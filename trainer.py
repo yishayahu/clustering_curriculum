@@ -25,6 +25,7 @@ class Trainer:
         self.accuracies = {}
         self.steps_for_acc_loss_and_time = {}
         self.tb = tb
+        self.clusters = None
 
         for phase in ["train", "eval", "test"]:
             self.times[phase] = [[] for _ in models]
@@ -83,7 +84,9 @@ class Trainer:
         epoch_loss = running_loss / len(dl.dataset)
         epoch_acc = running_corrects.double() / len(dl.dataset)
         if phase == "eval" and model.do_clustering():
-            ret_value = self.train_dls[idx].sampler.create_distribiouns(model.get_clusters(), eval_loss_dict, curr_step)
+            if self.clusters is None:
+                self.clusters = model.get_clusters()
+            ret_value = self.train_dls[idx].sampler.create_distribiouns(self.clusters, eval_loss_dict, curr_step)
             if ret_value == "done":
                 model.clustering_algorithm = None
                 self.train_dls[idx] = torch.utils.data.DataLoader(
