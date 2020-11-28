@@ -19,13 +19,13 @@ def main(exp_name="not_pretrained_start_from_easy"):
     my_computer = str(device) == "cpu"
     os.environ["my_computer"] = str(my_computer)
     if str(my_computer) == "False":
-        os.environ["n_cluster"] = "40"
+        os.environ["n_cluster"] = "400"
     else:
         os.environ["n_cluster"] = "10"
     print(f"n clustrs is {os.environ['n_cluster']}")
     cfar10_labels = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
-    cifar10_train_ds = torchvision.datasets.CIFAR10(
+    cifar10_train_ds = torchvision.datasets.CIFAR100(
         root='./data/cifar-10/', download=True, train=True,
         transform=tvtf.ToTensor()  # Convert PIL image to pytorch Tensor
 
@@ -47,7 +47,7 @@ def main(exp_name="not_pretrained_start_from_easy"):
     train_set_clustered, eval_set = torch.utils.data.random_split(train_set_normal, [int(len(train_set_normal) * 0.80),
                                                                                      int(len(train_set_normal) * 0.20)])
     tb = utils.Tb(exp_name=exp_name)
-    clustered_smapler = ClusteredSampler(train_set_clustered, start_clustering=7200, end_clustering=45000, tb=tb)
+    clustered_smapler = ClusteredSampler(train_set_clustered, start_clustering=7200, end_clustering=65000, tb=tb)
     train_dl, eval_dl, test_dl = utils.create_data_loaders([train_set_clustered, eval_set, test_set],
                                                            [clustered_smapler, None, None])
     train_dls.append(train_dl)
@@ -64,7 +64,7 @@ def main(exp_name="not_pretrained_start_from_easy"):
                                    amsgrad=False)]
     trainer = Trainer(models=models, train_dls=train_dls, eval_dls=eval_dls, test_dls=test_dls,
                       loss_fn=nn.CrossEntropyLoss(), loss_fn_eval=nn.CrossEntropyLoss(reduction="none"),
-                      optimizers=optimizers, num_steps=65000, tb=tb)
+                      optimizers=optimizers, num_steps=80000, tb=tb)
     trainer.train_models()
 
 
