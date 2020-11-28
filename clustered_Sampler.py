@@ -44,12 +44,15 @@ class ClusteredSampler(torch.utils.data.Sampler):
             self.cluster_dict = cluster_dict
         return "working"
 
-    def get_cluster(self, inp):
+    def is_in_train(self, inputs):
+        to_return = [True] * inputs.shape[0]
         if self.do_dist:
-            hashed = get_md5sum(inp.cpu().numpy().tobytes())
-            cluster = self.cluster_dict[str(hashed)]
-            return cluster
-        return None
+            for idx, inp in enumerate(inputs):
+                hashed = get_md5sum(inp.cpu().numpy().tobytes())
+                cluster = self.cluster_dict[str(hashed)]
+                if self.center > self.hiererchy.index(cluster):
+                    to_return[idx] = False
+        return to_return
 
     def __iter__(self):
         indexes = list(range(len(self.ds)))

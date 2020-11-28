@@ -48,6 +48,9 @@ class Trainer:
             dl = self.test_dls[idx]
         running_loss = 0.0
         running_corrects = 0
+
+        sub_running_corrects = 0
+        sub_running_corrects_disc = 0
         since = time.time()
         eval_loss_dict = {}
         curr_step = self.curr_steps[idx]
@@ -78,11 +81,23 @@ class Trainer:
                         hashed = get_md5sum(curr_input.cpu().numpy().tobytes())
                         eval_loss_dict[str(hashed)] = temp_loss
                 running_loss += loss.item() * inputs.size(0)
+                if phase == "test" and model.do_clustering():
+                    is_in_train = self.train_dls[idx].sampler.is_in_train(inputs)
+                    assert len(is_in_train) == len(preds)
+                    for pred,flag,label in zip(preds,is_in_train,labels.data):
+                        if flag:
+                            if pred == label:
+                                sub_running_corrects+=1
+                            sub_running_corrects_disc+=1
                 running_corrects += torch.sum(preds == labels.data)
         self.curr_steps[idx] = curr_step
         time_elapsed = time.time() - since
         epoch_loss = running_loss / len(dl.dataset)
         epoch_acc = running_corrects.double() / len(dl.dataset)
+        if sub_running_corrects_disc == 0:
+            sub_epoch_acc = None
+        else:
+            sub_epoch_acc = sub_running_corrects / sub_running_corrects_disc
         if phase == "eval" and model.do_clustering():
             if self.clusters is None:
                 self.clusters = model.get_clusters()
@@ -92,8 +107,8 @@ class Trainer:
                 self.train_dls[idx] = torch.utils.data.DataLoader(
                     self.train_dls[idx].dataset + self.eval_dls[idx].dataset, batch_size=32, shuffle=True,
                     num_workers=0 if os.environ["my_computer"] == "True" else 2)
-        return time_elapsed, epoch_loss, epoch_acc
-    def save_epoch_results(self,phase,idx,curr_time,loss,acc,step):
+        return time_elapsed, epoch_loss, epoch_acc,sub_epoch_acc
+    def save_epoch_results(self,phase,idx,curr_time,loss,acc,sub_acc,step):
         def save_results_to_json():
             json.dump(self.times, open("times.json", 'w'))
             json.dump(self.losses, open("losses.json", 'w'))
@@ -103,6 +118,8 @@ class Trainer:
             self.tb.add_scalar(idx,phase + " loss",loss,step)
             self.tb.add_scalar(idx,phase + " curr_time",curr_time,step)
             self.tb.add_scalar(idx,phase + " acc",acc,step)
+            if sub_acc:
+                self.tb.add_scalar(idx,phase + " sub_acc",sub_acc,step)
         self.times[phase][idx].append(curr_time)
         self.losses[phase][idx].append(loss)
         self.accuracies[phase][idx].append(acc.item())
@@ -120,7 +137,7 @@ class Trainer:
             for phase in ["train", "eval", "test"]:
                 if phase == "eval" and not self.models[idx].do_clustering():
                     continue
-                curr_time, loss, acc = self.run_epoch(idx, phase)
-                self.save_epoch_results(phase,idx,curr_time,loss,acc,self.curr_steps[idx])
+                curr_time, loss, acc,sub_acc = self.run_epoch(idx, phase)
+                self.save_epoch_results(phase,idx,curr_time,loss,acc,sub_acc,self.curr_steps[idx])
 
 
