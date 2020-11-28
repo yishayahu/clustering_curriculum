@@ -46,7 +46,7 @@ class ClusteredSampler(torch.utils.data.Sampler):
 
     def is_in_train(self, inputs):
         to_return = [True] * inputs.shape[0]
-        if self.do_dist:
+        if self.do_dist and self.cluster_dict:
             for idx, inp in enumerate(inputs):
                 hashed = get_md5sum(inp.cpu().numpy().tobytes())
                 cluster = self.cluster_dict[str(hashed)]
