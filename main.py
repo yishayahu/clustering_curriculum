@@ -33,11 +33,11 @@ def main(exp_name="not_pretrained_start_from_easy"):
     if os.environ["my_computer"] == "True":
         evens = list(range(0, len(cifar10_train_ds), 50))
         cifar10_train_ds = torch.utils.data.Subset(cifar10_train_ds, evens)
-    models = [resnet18(num_classes=100,
+    models = [resnet18(num_classes=10,
                        clustering_algorithm=clustering_algorithms.KmeanSklearn(n_clusters=int(os.environ['n_cluster']),
                                                                                n_init=20, max_iter=200),
                        pretrained=False),
-              resnet18(num_classes=100, pretrained=False)]
+              resnet18(num_classes=10, pretrained=False)]
     for model in models:
         model.to(device=device)
     train_dls, eval_dls, test_dls = [], [], []
