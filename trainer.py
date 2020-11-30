@@ -58,7 +58,7 @@ class Trainer:
         curr_step = self.curr_steps[idx]
         optimizer = self.optimizers[idx]
 
-        for inputs, labels in dl:
+        for inputs, labels in tqdm(dl,desc=f"idx {idx}, phase {phase}"):
             if inputs.shape[0] == 1:
                 print("skipped")
                 continue
@@ -75,9 +75,6 @@ class Trainer:
                 _, preds = torch.max(outputs, 1)
                 if phase == "train":
                     curr_step += 1
-                    if curr_step % 1000 == 0:
-
-                        print(f"curr step is {curr_step} in model {idx}")
                     loss.backward()
                     optimizer.step()
                 elif phase == "eval" and model.do_clustering():
