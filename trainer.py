@@ -75,7 +75,9 @@ class Trainer:
                 _, preds = torch.max(outputs, 1)
                 if phase == "train":
                     curr_step += 1
-                    print(f"curr step is {curr_step}")
+                    if curr_step % 1000 == 0:
+
+                        print(f"curr step is {curr_step} in model {idx}")
                     loss.backward()
                     optimizer.step()
                 elif phase == "eval" and model.do_clustering():
