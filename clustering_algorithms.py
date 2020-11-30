@@ -3,6 +3,7 @@ from sklearn.cluster import KMeans
 from sklearn.cluster import Birch
 from kmeanstf import KMeansTF
 
+from utils import get_md5sum
 
 
 class AbstractClusteringAlgorithm:
@@ -14,6 +15,8 @@ class AbstractClusteringAlgorithm:
 
     @property
     def labels_(self):
+        raise NotImplemented()
+    def predict(self,X,cluster_dict):
         raise NotImplemented()
 
 
@@ -27,6 +30,14 @@ class KmeanSklearn(AbstractClusteringAlgorithm):
     @property
     def labels_(self):
         return self.model.labels_
+    def predict(self,X,cluster_dict):
+        to_pred = []
+        for x in X:
+            hashed = get_md5sum(x.cpu().numpy().tobytes())
+            to_pred.append(cluster_dict[str(hashed)].cpu().detach().numpy())
+
+        return self.model.predict(np.array(to_pred))
+
 
 
 class BirchSklearn(AbstractClusteringAlgorithm):
