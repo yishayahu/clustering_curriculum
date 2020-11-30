@@ -75,6 +75,7 @@ class Trainer:
                 _, preds = torch.max(outputs, 1)
                 if phase == "train":
                     curr_step += 1
+                    print(f"curr step is {curr_step}")
                     loss.backward()
                     optimizer.step()
                 elif phase == "eval" and model.do_clustering():
@@ -104,7 +105,7 @@ class Trainer:
         if phase == "eval" and model.do_clustering():
             if self.clusters is None:
                 self.clusters = model.get_clusters()
-            ret_value = self.train_dls[idx].sampler.create_distribiouns(self.clusters, eval_loss_dict, curr_step) # todo: run this line only once
+            ret_value = self.train_dls[idx].sampler.create_distribiouns(self.clusters, eval_loss_dict, curr_step)  # todo: run this line only once
             if ret_value == "done":
                 model.clustering_algorithm = None
                 self.train_dls[idx] = torch.utils.data.DataLoader(
@@ -134,7 +135,7 @@ class Trainer:
         save_results_to_tb()
 
     def train_models(self):
-        while tqdm(True):
+        while True:
             if min(self.curr_steps) > self.num_steps:
                 break
             idx = np.argmin(self.curr_steps)
