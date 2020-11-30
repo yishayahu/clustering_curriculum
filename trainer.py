@@ -104,7 +104,7 @@ class Trainer:
             sub_epoch_acc = None
         else:
             sub_epoch_acc = sub_running_corrects / sub_running_corrects_disc
-        if phase == "eval" and model.do_clustering():
+        if phase == "eval" and model.do_clustering() and self.train_dls[idx].sampler.start_clustering < curr_step:
             if self.clusters is None:
                 self.clusters = model.get_clusters()
             ret_value = self.train_dls[idx].sampler.create_distribiouns(self.clusters, eval_loss_dict, curr_step)  # todo: run this line only once
