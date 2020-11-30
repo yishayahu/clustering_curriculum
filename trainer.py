@@ -86,7 +86,7 @@ class Trainer:
                         hashed = get_md5sum(curr_input.cpu().numpy().tobytes())
                         eval_loss_dict[str(hashed)] = temp_loss
                 running_loss += loss.item() * inputs.size(0)
-                if phase == "test" and model.do_clustering():
+                if phase == "test" and model.do_clustering() and self.clusters:
                     cluster_labels = model.clustering_algorithm.predict(inputs,model.cluster_dict)
                     is_in_train = self.train_dls[idx].sampler.is_in_train(cluster_labels)
                     assert len(is_in_train) == len(preds)
