@@ -54,7 +54,7 @@ def main(exp_name="not_pretrained_start_from_easy"):
     eval_dls.append(eval_dl)
     test_dls.append(test_dl)
     # normal resnet data
-    train_dl, eval_dl, test_dl = utils.create_data_loaders([train_set_normal, [], test_set], [None, None, None])
+    train_dl, eval_dl, test_dl = utils.create_data_loaders([train_set_clustered, [], test_set], [None, None, None])
     train_dls.append(train_dl)
     eval_dls.append(eval_dl)
     test_dls.append(test_dl)
