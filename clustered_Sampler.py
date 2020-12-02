@@ -27,7 +27,7 @@ class ClusteredSampler(torch.utils.data.Sampler):
         self.do_dist = self.start_clustering <= step <= self.end_clustering and self.center > 0
         if self.center <= 0 or step > self.end_clustering:
             return "done"
-        if self.do_dist and self.cluster_dict is None:
+        if self.do_dist:# and self.cluster_dict is None:
             for k, v in eval_loss_dict.items():
                 losses[cluster_dict[k]] += v
                 amounts[cluster_dict[k]] += 1
@@ -58,7 +58,7 @@ class ClusteredSampler(torch.utils.data.Sampler):
         if self.do_dist:
             print(self.center)
             curr_hiererchy = {}
-            self.center -= 2
+            self.center -= 1
             for i in range(self.n_cluster):
                 curr_hiererchy[self.hiererchy[i]] = np.exp(-0.2 * abs(self.center - i)) if i < self.center else 1
             # self.center = max(self.center, 0)
