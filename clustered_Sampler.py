@@ -58,7 +58,7 @@ class ClusteredSampler(torch.utils.data.Sampler):
         if self.do_dist:
             print(self.center)
             curr_hiererchy = {}
-            self.center -= 0.5
+            self.center -= 2
             for i in range(self.n_cluster):
                 curr_hiererchy[self.hiererchy[i]] = np.exp(-0.2 * abs(self.center - i)) if i < self.center else 1
             # self.center = max(self.center, 0)
