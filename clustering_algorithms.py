@@ -1,7 +1,7 @@
 import numpy as np
-from sklearn.cluster import KMeans
-from sklearn.cluster import Birch
-from kmeanstf import KMeansTF
+
+
+
 
 from utils import get_md5sum
 
@@ -22,6 +22,7 @@ class AbstractClusteringAlgorithm:
 
 class KmeanSklearn(AbstractClusteringAlgorithm):
     def __init__(self, **kwargs):
+        from sklearn.cluster import KMeans
         self.model = KMeans(**kwargs)
 
     def fit(self, x: [np.ndarray]):
@@ -42,7 +43,8 @@ class KmeanSklearn(AbstractClusteringAlgorithm):
 
 class BirchSklearn(AbstractClusteringAlgorithm):
     def __init__(self, **kwargs):
-        self.model = KMeans(**kwargs)
+        from sklearn.cluster import Birch
+        self.model = Birch(**kwargs)
 
     def fit(self, x: [np.ndarray]):
         self.model.fit(x)
@@ -55,6 +57,7 @@ class BirchSklearn(AbstractClusteringAlgorithm):
 class KMeansTF(AbstractClusteringAlgorithm):
     def __init__(self, **kwargs):
         import tensorflow as tf
+        from kmeanstf import KMeansTF
         self.model = KMeansTF(**kwargs)
 
     def fit(self, x: [np.ndarray]):

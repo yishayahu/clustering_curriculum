@@ -10,12 +10,12 @@ import utils
 from new_resnet import *
 from trainer import Trainer
 import clustering_algorithms
-
+import numpy as np
 
 def main(exp_name="not_pretrained_start_from_easy"):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
-
+    #tt = np.load("data/imagenet/train_data_batch_1",allow_pickle=True)
     my_computer = str(device) == "cpu"
     os.environ["my_computer"] = str(my_computer)
     if str(my_computer) == "False":
@@ -34,7 +34,7 @@ def main(exp_name="not_pretrained_start_from_easy"):
         evens = list(range(0, len(cifar10_train_ds), 50))
         cifar10_train_ds = torch.utils.data.Subset(cifar10_train_ds, evens)
     models = [resnet18(num_classes=10,
-                       clustering_algorithm=clustering_algorithms.KmeanSklearn(n_clusters=int(os.environ['n_cluster']),
+                       clustering_algorithm=clustering_algorithms.BirchSklearn(n_clusters=int(os.environ['n_cluster']),
                                                                                n_init=20, max_iter=200),
                        pretrained=False),
               resnet18(num_classes=10, pretrained=False)]
