@@ -9,6 +9,7 @@ from tqdm import tqdm
 
 from utils import get_md5sum, Tb
 import numpy as np
+import progressbar
 
 
 class Trainer:
@@ -28,6 +29,8 @@ class Trainer:
         self.steps_for_acc_loss_and_time = {}
         self.tb = tb
         self.clusters = None
+        self.bar = progressbar.ProgressBar(max_value=progressbar.UnknownLength)
+        self.last_bar_update = 0
 
         for phase in ["train", "eval", "test"]:
             self.times[phase] = [[] for _ in models]
@@ -93,6 +96,9 @@ class Trainer:
                                 sub_running_corrects += 1
                             sub_running_corrects_disc += 1
                 running_corrects += torch.sum(preds == labels.data)
+        if self.last_bar_update < curr_step:
+            self.bar.update(curr_step)
+            self.last_bar_update = curr_step
         self.curr_steps[idx] = curr_step
         time_elapsed = time.time() - since
         epoch_loss = running_loss / len(dl.dataset)

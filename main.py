@@ -19,30 +19,36 @@ def main(exp_name="not_pretrained_start_from_easy"):
     my_computer = str(device) == "cpu"
     os.environ["my_computer"] = str(my_computer)
     if str(my_computer) == "False":
-        os.environ["n_cluster"] = "40"
+        os.environ["n_cluster"] = "4000"
     else:
         os.environ["n_cluster"] = "10"
     print(f"n clustrs is {os.environ['n_cluster']}")
     cfar10_labels = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
-
-    cifar10_train_ds = torchvision.datasets.CIFAR10(
-        root='./data/cifar-10/', download=True, train=True,
-        transform=tvtf.ToTensor()  # Convert PIL image to pytorch Tensor
-
-    )
-    if os.environ["my_computer"] == "True":
-        evens = list(range(0, len(cifar10_train_ds), 50))
-        cifar10_train_ds = torch.utils.data.Subset(cifar10_train_ds, evens)
-    models = [resnet18(num_classes=10,
-                       clustering_algorithm=clustering_algorithms.BirchSklearn(n_clusters=int(os.environ['n_cluster'])),
+    np_ds = np.load("data/imagenet/train_data_batch_1",allow_pickle=True)
+    for i in range(2,11):
+        new_data = np.load(f"data/imagenet/train_data_batch_{i}",allow_pickle=True)
+        np_ds["data"] = np.concatenate((np_ds["data"],new_data["data"]))
+        np_ds["labels"] = np_ds["labels"]+new_data["labels"]
+    # cifar10_train_ds = torchvision.datasets.ImageNet(
+    #     root='./data/imagenet/',
+    #     transform=tvtf.ToTensor()  # Convert PIL image to pytorch Tensor
+    #
+    # )
+    torch_ds_train = torch.utils.data.TensorDataset(torch.Tensor(np_ds["data"]),torch.Tensor(np_ds["labels"]))
+    eval_np = np.load(f"data/imagenet/val_data",allow_pickle=True)
+    torch_ds_eval = torch.utils.data.TensorDataset(eval_np["data"],eval_np["labels"])
+    # if os.environ["my_computer"] == "True":
+    #     evens = list(range(0, len(cifar10_train_ds), 50))
+    #     cifar10_train_ds = torch.utils.data.Subset(cifar10_train_ds, evens)
+    models = [resnet50(num_classes=1000,
+                       clustering_algorithm=clustering_algorithms.KmeanSklearn(n_clusters=int(os.environ['n_cluster'])),
                        pretrained=False),
-              resnet18(num_classes=10, pretrained=False)]
+              resnet50(num_classes=1000, pretrained=False)]
     for model in models:
         model.to(device=device)
     train_dls, eval_dls, test_dls = [], [], []
     # create cluster resnet data
-    train_set_normal, test_set = torch.utils.data.random_split(cifar10_train_ds, [int(len(cifar10_train_ds) * 0.85),
-                                                                                  int(len(cifar10_train_ds) * 0.15)])
+    train_set_normal, test_set = torch_ds_train,torch_ds_eval
     train_set_clustered, eval_set = torch.utils.data.random_split(train_set_normal, [int(len(train_set_normal) * 0.80),
                                                                                      int(len(train_set_normal) * 0.20)])
     tb = utils.Tb(exp_name=exp_name)
@@ -63,7 +69,7 @@ def main(exp_name="not_pretrained_start_from_easy"):
                                    amsgrad=False)]
     trainer = Trainer(models=models, train_dls=train_dls, eval_dls=eval_dls, test_dls=test_dls,
                       loss_fn=nn.CrossEntropyLoss(), loss_fn_eval=nn.CrossEntropyLoss(reduction="none"),
-                      optimizers=optimizers, num_steps=65000, tb=tb)
+                      optimizers=optimizers, num_steps=300000, tb=tb)
     trainer.train_models()
 
 
