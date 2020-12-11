@@ -25,10 +25,11 @@ def main(exp_name="not_pretrained_start_from_easy"):
     print(f"n clustrs is {os.environ['n_cluster']}")
     cfar10_labels = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
     np_ds = np.load("data/imagenet/train_data_batch_1",allow_pickle=True)
-    for i in range(2,11):
-        new_data = np.load(f"data/imagenet/train_data_batch_{i}",allow_pickle=True)
-        np_ds["data"] = np.concatenate((np_ds["data"],new_data["data"]))
-        np_ds["labels"] = np_ds["labels"]+new_data["labels"]
+    if os.environ["my_computer"] != "True":
+        for i in range(2,11):
+            new_data = np.load(f"data/imagenet/train_data_batch_{i}",allow_pickle=True)
+            np_ds["data"] = np.concatenate((np_ds["data"],new_data["data"]))
+            np_ds["labels"] = np_ds["labels"]+new_data["labels"]
     # cifar10_train_ds = torchvision.datasets.ImageNet(
     #     root='./data/imagenet/',
     #     transform=tvtf.ToTensor()  # Convert PIL image to pytorch Tensor
@@ -36,7 +37,7 @@ def main(exp_name="not_pretrained_start_from_easy"):
     # )
     torch_ds_train = torch.utils.data.TensorDataset(torch.Tensor(np_ds["data"]),torch.Tensor(np_ds["labels"]))
     eval_np = np.load(f"data/imagenet/val_data",allow_pickle=True)
-    torch_ds_eval = torch.utils.data.TensorDataset(eval_np["data"],eval_np["labels"])
+    torch_ds_eval = torch.utils.data.TensorDataset(torch.Tensor(eval_np["data"]),torch.Tensor(eval_np["labels"]))
     # if os.environ["my_computer"] == "True":
     #     evens = list(range(0, len(cifar10_train_ds), 50))
     #     cifar10_train_ds = torch.utils.data.Subset(cifar10_train_ds, evens)
@@ -49,7 +50,10 @@ def main(exp_name="not_pretrained_start_from_easy"):
     train_dls, eval_dls, test_dls = [], [], []
     # create cluster resnet data
     train_set_normal, test_set = torch_ds_train,torch_ds_eval
-    train_set_clustered, eval_set = torch.utils.data.random_split(train_set_normal, [int(len(train_set_normal) * 0.80),
+    adder = 0
+    if int(len(train_set_normal) * 0.80) + int(len(train_set_normal) * 0.20)< len(train_set_normal):
+        adder = 1
+    train_set_clustered, eval_set = torch.utils.data.random_split(train_set_normal, [int(len(train_set_normal) * 0.80)+adder,
                                                                                      int(len(train_set_normal) * 0.20)])
     tb = utils.Tb(exp_name=exp_name)
     clustered_smapler = ClusteredSampler(train_set_clustered, start_clustering=5000, end_clustering=50000, tb=tb)

@@ -65,8 +65,10 @@ class Trainer:
             if inputs.shape[0] == 1:
                 print("skipped")
                 continue
+            inputs = inputs.reshape(inputs.shape[0],3,32,32)
+
             inputs = inputs.to(self.device)
-            labels = labels.to(self.device)
+            labels = labels.to(self.device).long()
 
             # zero the parameter gradients
             optimizer.zero_grad()
