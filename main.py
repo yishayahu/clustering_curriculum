@@ -23,24 +23,10 @@ def main(exp_name="not_pretrained_start_from_easy"):
     else:
         os.environ["n_cluster"] = "10"
     print(f"n clustrs is {os.environ['n_cluster']}")
-    cfar10_labels = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
-    np_ds = np.load("data/imagenet/train_data_batch_1",allow_pickle=True)
-    if os.environ["my_computer"] != "True":
-        for i in range(2,11):
-            new_data = np.load(f"data/imagenet/train_data_batch_{i}",allow_pickle=True)
-            np_ds["data"] = np.concatenate((np_ds["data"],new_data["data"]))
-            np_ds["labels"] = np_ds["labels"]+new_data["labels"]
-    # cifar10_train_ds = torchvision.datasets.ImageNet(
-    #     root='./data/imagenet/',
-    #     transform=tvtf.ToTensor()  # Convert PIL image to pytorch Tensor
-    #
-    # )
-    torch_ds_train = torch.utils.data.TensorDataset(torch.Tensor(np_ds["data"]),torch.Tensor(np_ds["labels"]))
+
+    torch_ds_train = utils.DS(data_root="data/imagenet_images")
     eval_np = np.load(f"data/imagenet/val_data",allow_pickle=True)
     torch_ds_eval = torch.utils.data.TensorDataset(torch.Tensor(eval_np["data"]),torch.Tensor(eval_np["labels"]))
-    # if os.environ["my_computer"] == "True":
-    #     evens = list(range(0, len(cifar10_train_ds), 50))
-    #     cifar10_train_ds = torch.utils.data.Subset(cifar10_train_ds, evens)
     models = [resnet50(num_classes=1000,
                        clustering_algorithm=clustering_algorithms.KmeanSklearn(n_clusters=int(os.environ['n_cluster'])),
                        pretrained=False),
