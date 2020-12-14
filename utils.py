@@ -12,7 +12,7 @@ class DS(torch.utils.data.Dataset):
         self.data_len =1281168# todo:remove constant max(os.listdir(data_root), key=lambda x: int(x.split("_")[1].split(".")[0]))
 
     def __getitem__(self, item):
-        im_path = os.path.join(self.data_root, f"image_{item}.npz")
+        im_path = os.path.join(self.data_root,f"to{int(item/100000)}", f"image_{item}.npz")
         np_item = np.load(im_path)
         return torch.Tensor(np_item["data"].reshape((32, 32, 3)).transpose(2, 0, 1)), np_item["label"] -1
 
