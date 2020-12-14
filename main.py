@@ -37,12 +37,13 @@ def main(exp_name="not_pretrained_start_from_easy"):
     # create cluster resnet data
     train_set_normal, test_set = torch_ds_train,torch_ds_eval
     adder = 0
-    if int(len(train_set_normal) * 0.80) + int(len(train_set_normal) * 0.20)< len(train_set_normal):
+    if int(len(train_set_normal) * 0.80) + int(len(train_set_normal) * 0.20) < len(train_set_normal):
         adder = 1
     train_set_clustered, eval_set = torch.utils.data.random_split(train_set_normal, [int(len(train_set_normal) * 0.80)+adder,
                                                                                      int(len(train_set_normal) * 0.20)])
     tb = utils.Tb(exp_name=exp_name)
-    clustered_smapler = ClusteredSampler(train_set_clustered, start_clustering=5000, end_clustering=50000, tb=tb)
+    print("clustreee")
+    clustered_smapler = ClusteredSampler(train_set_clustered, start_clustering=30000, end_clustering=250000, tb=tb)
     train_dl, eval_dl, test_dl = utils.create_data_loaders([train_set_clustered, eval_set, test_set],
                                                            [clustered_smapler, None, None])
     train_dls.append(train_dl)
