@@ -15,7 +15,6 @@ import numpy as np
 def main(exp_name="not_pretrained_start_from_easy"):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
-    #tt = np.load("data/imagenet/train_data_batch_1",allow_pickle=True)
     my_computer = str(device) == "cpu"
     os.environ["my_computer"] = str(my_computer)
     if str(my_computer) == "False":
@@ -23,9 +22,8 @@ def main(exp_name="not_pretrained_start_from_easy"):
     else:
         os.environ["n_cluster"] = "10"
     print(f"n clustrs is {os.environ['n_cluster']}")
-
-    torch_ds_train = utils.DS(data_root="data/imagenet_images")
-    eval_np = np.load(f"data/imagenet/val_data",allow_pickle=True)
+    torch_ds_train = utils.DS(data_root=os.path.join(os.path.dirname(os.getcwd()),"data","data_clustering","imagenet"))
+    eval_np = np.load(os.path.join(os.path.dirname(os.getcwd()),"data","data_clustering","imagenet","val_data"),allow_pickle=True)
     torch_ds_eval = torch.utils.data.TensorDataset(torch.Tensor(eval_np["data"]),torch.Tensor(eval_np["labels"]))
     models = [resnet50(num_classes=1000,
                        clustering_algorithm=clustering_algorithms.KmeanSklearn(n_clusters=int(os.environ['n_cluster'])),

@@ -4,17 +4,32 @@ import subprocess
 import numpy as np
 import torch
 import torchvision
-
+import random
 
 class DS(torch.utils.data.Dataset):
     def __init__(self, data_root):
         self.data_root = data_root
-        self.data_len =1281168# todo:remove constant max(os.listdir(data_root), key=lambda x: int(x.split("_")[1].split(".")[0]))
+        self.batch_len = 128116
+        self.data_len =1281167# todo:remove constant max(os.listdir(data_root), key=lambda x: int(x.split("_")[1].split(".")[0]))
+        self.buffer = {}
 
     def __getitem__(self, item):
-        im_path = os.path.join(self.data_root,f"to{int(item/100000)}", f"image_{item}.npz")
-        np_item = np.load(im_path)
-        return torch.Tensor(np_item["data"].reshape((32, 32, 3)).transpose(2, 0, 1)), np_item["label"] -1
+        batch_num = int(item/self.batch_len)+1
+        place_in_batch = item % self.batch_len
+        if batch_num > 10:
+            batch_num = 10
+            place_in_batch = item - 9 * self.batch_len
+        if batch_num in self.buffer:
+            batch = self.buffer[batch_num]
+        else:
+            batch = np.load(os.path.join(self.data_root,f"train_data_batch_{batch_num}"),allow_pickle=True)
+            self.buffer[batch_num] = batch
+            if len(self.buffer) > 3:
+                self.buffer.pop(random.choice(list(self.buffer.keys())))
+        data = torch.Tensor(batch["data"][place_in_batch].reshape((32, 32, 3)).transpose(2, 0, 1))
+        label = batch["labels"][place_in_batch] -1
+
+        return data,label
 
     def __len__(self):
         return self.data_len
