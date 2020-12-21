@@ -170,7 +170,7 @@ class Trainer:
                 new_ds = utils.DS_by_batch(data_root=os.path.join(os.path.dirname(os.getcwd()),"data","data_clustering","imagenet"),max_index=10)
                 self.train_dls[idx] = torch.utils.data.DataLoader(
                     new_ds, batch_size=int(os.environ["batch_size"]), sampler=RegularSampler(new_ds),
-                    num_workers=0 if os.environ["my_computer"] == "True" else 2)
+                    num_workers=0 )
         return time_elapsed, epoch_loss, epoch_acc, 0
     def run_test(self,idx):
         model = self.models[idx]
