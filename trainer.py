@@ -195,7 +195,7 @@ class Trainer:
                 optimizer.zero_grad()
                 model.zero_grad()
                 outputs = model(inputs)
-                epocj_len+=1
+                epoch_len+=1
                 loss = self.loss_fn(outputs, labels)
                 _, preds = torch.max(outputs, 1)
                 if  model.do_clustering() and self.clusters:
