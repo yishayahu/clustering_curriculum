@@ -19,7 +19,9 @@ class DS_by_batch(torch.utils.data.Dataset):
             assert  not is_eval
 
         self.curr_batch = None
-        self.batch_len =128116# self.curr_batch["Y_train"].shape[0]
+        self.batch_len =128116 # self.curr_batch["Y_train"].shape[0]
+        if not is_train and not is_eval:
+            self.batch_len = 50000
         self.is_train = is_train
         self.is_eval = is_eval
         self.max_index = max_index

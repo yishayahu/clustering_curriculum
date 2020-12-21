@@ -20,7 +20,7 @@ def main(exp_name="imagenet_one_eval_kmeans_decrease_by_1"):
     os.environ["my_computer"] = str(my_computer)
     os.environ["batch_size"] = "512"
     if str(my_computer) == "False":
-        os.environ["n_cluster"] = "5" # todo: change back
+        os.environ["n_cluster"] = "2000" # todo: change back
     else:
         os.environ["n_cluster"] = "10"
     print(f"n clustrs is {os.environ['n_cluster']}")

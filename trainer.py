@@ -103,7 +103,7 @@ class Trainer:
             running_corrects += torch.sum(preds == labels.data).cpu()
 
 
-            if epoch_len>5:
+            if epoch_len>2000:
                 break
         if self.last_bar_update < curr_step:
             self.bar.update(curr_step)
@@ -183,7 +183,7 @@ class Trainer:
         sub_running_corrects_disc = 0
         since = time.time()
         optimizer = self.optimizers[idx]
-        epocj_len = 0
+        epoch_len = 0
         for inputs, labels in tqdm(dl,desc=f"idx {idx}, phase test"):
             if inputs.shape[0] == 1:
                 print("skipped")
