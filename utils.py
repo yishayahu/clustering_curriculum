@@ -33,6 +33,9 @@ class DS_by_batch(torch.utils.data.Dataset):
         self.curr_batch = None
     def __getitem__(self, item):
         if self.curr_batch is None:
+            print("ghrerrere")
+            print(self.data_root)
+            print(self.curr_batch_idx)
             self.curr_batch = load_databatch(data_folder=self.data_root,idx=self.curr_batch_idx if not self.is_eval else 10,name="train" if (self.is_train or self.is_eval) else "val")
         return self.curr_batch["X_train"][item],self.curr_batch["Y_train"][item]
 

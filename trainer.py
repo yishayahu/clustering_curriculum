@@ -90,7 +90,7 @@ class Trainer:
             # track history if only in train
             optimizer.zero_grad()
             model.zero_grad()
-            start_train = time.time()
+
             outputs = model(inputs)
 
             loss = self.loss_fn(outputs, labels)
@@ -103,7 +103,7 @@ class Trainer:
             running_corrects += torch.sum(preds == labels.data).cpu()
 
 
-            if epoch_len>2000:
+            if epoch_len>5:
                 break
         if self.last_bar_update < curr_step:
             self.bar.update(curr_step)
@@ -114,6 +114,7 @@ class Trainer:
         epoch_acc = running_corrects.double() /  epoch_len * int(os.environ["batch_size"])
         self.save_ckpt(model=model,optimizer=optimizer,step=curr_step,idx=idx)
         return time_elapsed, epoch_loss, epoch_acc, 0
+
     def run_eval(self,idx):
         model = self.models[idx]
         curr_step = self.curr_steps[idx]
@@ -127,6 +128,7 @@ class Trainer:
         since = time.time()
         eval_loss_dict = {}
         optimizer = self.optimizers[idx]
+        epoch_len = 0
         for inputs, labels in tqdm(dl,desc=f"idx {idx}, phase eval"):
             if inputs.shape[0] == 1:
                 print("skipped")
@@ -142,6 +144,7 @@ class Trainer:
                 optimizer.zero_grad()
                 model.zero_grad()
                 outputs = model(inputs)
+                epoch_len+=1
                 loss = self.loss_fn(outputs, labels)
                 _, preds = torch.max(outputs, 1)
                 if model.do_clustering():
@@ -156,8 +159,8 @@ class Trainer:
             self.last_bar_update = curr_step
         self.curr_steps[idx] = curr_step
         time_elapsed = time.time() - since
-        epoch_loss = running_loss / len(dl.dataset)
-        epoch_acc = running_corrects.double() / len(dl.dataset)
+        epoch_loss = running_loss / epoch_len * int(os.environ["batch_size"])
+        epoch_acc = running_corrects.double() / epoch_len * int(os.environ["batch_size"])
         if model.do_clustering() and self.train_dls[idx].sampler.start_clustering < curr_step:
             if self.clusters is None:
                 self.clusters = model.get_clusters()
@@ -180,6 +183,7 @@ class Trainer:
         sub_running_corrects_disc = 0
         since = time.time()
         optimizer = self.optimizers[idx]
+        epocj_len = 0
         for inputs, labels in tqdm(dl,desc=f"idx {idx}, phase test"):
             if inputs.shape[0] == 1:
                 print("skipped")
@@ -191,6 +195,7 @@ class Trainer:
                 optimizer.zero_grad()
                 model.zero_grad()
                 outputs = model(inputs)
+                epocj_len+=1
                 loss = self.loss_fn(outputs, labels)
                 _, preds = torch.max(outputs, 1)
                 if  model.do_clustering() and self.clusters:
@@ -209,8 +214,8 @@ class Trainer:
             self.last_bar_update = curr_step
         self.curr_steps[idx] = curr_step
         time_elapsed = time.time() - since
-        epoch_loss = running_loss / len(dl.dataset)
-        epoch_acc = running_corrects.double() / len(dl.dataset)
+        epoch_loss = running_loss / epoch_len * int(os.environ["batch_size"])
+        epoch_acc = running_corrects.double() / epoch_len * int(os.environ["batch_size"])
         if sub_running_corrects_disc == 0:
             sub_epoch_acc = None
         else:
