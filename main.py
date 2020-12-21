@@ -5,26 +5,26 @@ import torchvision.transforms as tvtf
 
 import torch.nn as nn
 
-from clustered_Sampler import ClusteredSampler
+from clustered_Sampler import ClusteredSampler,RegularSampler
 import utils
 from new_resnet import *
 from trainer import Trainer
 import clustering_algorithms
 import numpy as np
 
-def main(exp_name="not_pretrained_start_from_easy"):
+def main(exp_name="imagenet_one_eval_kmeans_decrease_by_1"):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
     my_computer = str(device) == "cpu"
+    print(torch.cuda.get_device_name(0))
     os.environ["my_computer"] = str(my_computer)
+    os.environ["batch_size"] = "512"
     if str(my_computer) == "False":
-        os.environ["n_cluster"] = "4000"
+        os.environ["n_cluster"] = "2000"
     else:
         os.environ["n_cluster"] = "10"
     print(f"n clustrs is {os.environ['n_cluster']}")
-    torch_ds_train = utils.DS(data_root=os.path.join(os.path.dirname(os.getcwd()),"data","data_clustering","imagenet"))
-    eval_np = np.load(os.path.join(os.path.dirname(os.getcwd()),"data","data_clustering","imagenet","val_data"),allow_pickle=True)
-    torch_ds_eval = torch.utils.data.TensorDataset(torch.Tensor(eval_np["data"]),torch.Tensor(eval_np["labels"]))
+
     models = [resnet50(num_classes=1000,
                        clustering_algorithm=clustering_algorithms.KmeanSklearn(n_clusters=int(os.environ['n_cluster'])),
                        pretrained=False),
@@ -33,22 +33,19 @@ def main(exp_name="not_pretrained_start_from_easy"):
         model.to(device=device)
     train_dls, eval_dls, test_dls = [], [], []
     # create cluster resnet data
-    train_set_normal, test_set = torch_ds_train,torch_ds_eval
-    adder = 0
-    if int(len(train_set_normal) * 0.80) + int(len(train_set_normal) * 0.20) < len(train_set_normal):
-        adder = 1
-    train_set_clustered, eval_set = torch.utils.data.random_split(train_set_normal, [int(len(train_set_normal) * 0.80)+adder,
-                                                                                     int(len(train_set_normal) * 0.20)])
+    train_set_normal, test_set = utils.DS_by_batch(data_root=os.path.join(os.path.dirname(os.getcwd()),"data","data_clustering","imagenet"),max_index=10),utils.DS_by_batch(data_root=os.path.join(os.path.dirname(os.getcwd()),"data","data_clustering","imagenet"),is_train=False)
+
+    train_set_clustered, eval_set = utils.DS_by_batch(data_root=os.path.join(os.path.dirname(os.getcwd()),"data","data_clustering","imagenet"),max_index=9),utils.DS_by_batch(data_root=os.path.join(os.path.dirname(os.getcwd()),"data","data_clustering","imagenet"),is_eval= True,is_train=False)
     tb = utils.Tb(exp_name=exp_name)
     print("clustreee")
-    clustered_smapler = ClusteredSampler(train_set_clustered, start_clustering=30000, end_clustering=250000, tb=tb)
+    clustered_smapler = ClusteredSampler(train_set_clustered, start_clustering=0, end_clustering=65000, tb=tb)
     train_dl, eval_dl, test_dl = utils.create_data_loaders([train_set_clustered, eval_set, test_set],
-                                                           [clustered_smapler, None, None])
+                                                           [clustered_smapler, RegularSampler(eval_set), RegularSampler(test_set)])
     train_dls.append(train_dl)
     eval_dls.append(eval_dl)
     test_dls.append(test_dl)
     # normal resnet data
-    train_dl, eval_dl, test_dl = utils.create_data_loaders([train_set_clustered, [], test_set], [None, None, None])
+    train_dl, eval_dl, test_dl = utils.create_data_loaders([train_set_normal, [], test_set], [RegularSampler(train_set_normal), None, RegularSampler(test_set)])
     train_dls.append(train_dl)
     eval_dls.append(eval_dl)
     test_dls.append(test_dl)
@@ -58,7 +55,7 @@ def main(exp_name="not_pretrained_start_from_easy"):
                                    amsgrad=False)]
     trainer = Trainer(models=models, train_dls=train_dls, eval_dls=eval_dls, test_dls=test_dls,
                       loss_fn=nn.CrossEntropyLoss(), loss_fn_eval=nn.CrossEntropyLoss(reduction="none"),
-                      optimizers=optimizers, num_steps=300000, tb=tb)
+                      optimizers=optimizers, num_steps=75000, tb=tb,load=False)
     trainer.train_models()
 
 

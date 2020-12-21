@@ -1,8 +1,4 @@
 import numpy as np
-
-
-
-
 from utils import get_md5sum
 
 
@@ -31,12 +27,15 @@ class KmeanSklearn(AbstractClusteringAlgorithm):
     @property
     def labels_(self):
         return self.model.labels_
-    def predict(self,X,cluster_dict):
+    def predict(self,X,cluster_dict=None,from_image = False):
         to_pred = []
-        for x in X:
-            hashed = get_md5sum(x.cpu().numpy().tobytes())
-            to_pred.append(cluster_dict[str(hashed)].cpu().detach().numpy())
-
+        if from_image:
+            assert cluster_dict is not None
+            for x in X:
+                hashed = get_md5sum(x.cpu().numpy().tobytes())
+                to_pred.append(cluster_dict[str(hashed)].cpu().detach().numpy())
+        else:
+            to_pred = X
         return self.model.predict(np.array(to_pred))
 
 

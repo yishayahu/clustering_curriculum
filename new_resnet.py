@@ -1,6 +1,9 @@
+import random
+
 import torch
 import torch.nn as nn
 import torchvision.transforms.functional as F
+import numpy as np
 try:
     from torch.hub import load_state_dict_from_url
 except ImportError:
@@ -200,7 +203,7 @@ class ResNet(nn.Module):
 
     def _forward_impl(self, x):
         # See note [TorchScript super()]
-        orig_x = x
+        orig_x = x.cpu()
 
         x = self.conv1(x)
         x = self.bn1(x)
@@ -216,8 +219,8 @@ class ResNet(nn.Module):
         x = torch.flatten(x, 1)
         if self.clustering_algorithm is not None:
             for image_index in range(x.shape[0]):
-                hashed = get_md5sum(orig_x[image_index].cpu().numpy().tobytes())
-                self.cluster_dict[str(hashed)] = x[image_index]
+                hashed = get_md5sum(orig_x[image_index].numpy().tobytes())
+                self.cluster_dict[str(hashed)] = x[image_index].cpu()
         x = self.fc(x)
 
         return x
@@ -229,13 +232,35 @@ class ResNet(nn.Module):
         if not self.clustering_algorithm:
             raise Exception("get clusters need clustering algo that is not None")
         arrays = []
-        for x in self.cluster_dict.values():
-            arrays.append(x.cpu().detach().numpy())
+        keys = []
+        for k,v in self.cluster_dict.items():
+            if random.random() < 0.6:
+                continue
+            keys.append(k)
+            arrays.append(v.cpu().detach().numpy().astype(np.int16))
         self.clustering_algorithm.fit(arrays)
         labels = self.clustering_algorithm.labels_
         to_label = {}
-        for idx, k in enumerate(self.cluster_dict.keys()):
+        for idx, k in enumerate(keys):
             to_label[k] = int(labels[idx])
+        keys_done = set(keys)
+        arrays = []
+        keys = []
+
+        for k,v in self.cluster_dict.items():
+            if k not in keys_done:
+                arrays.append(v.cpu().detach().numpy().astype(np.int16))
+                keys.append(k)
+                if len(keys) > 100000:
+                    labels = self.clustering_algorithm.predict(arrays)
+                    for idx, k1 in enumerate(keys):
+                        to_label[k1] = int(labels[idx])
+                    arrays = []
+                    keys = []
+        if len(keys) > 0:
+            labels = self.clustering_algorithm.predict(arrays)
+            for idx, k1 in enumerate(keys):
+                to_label[k1] = int(labels[idx])
         return to_label
 
 

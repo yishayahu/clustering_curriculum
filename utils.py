@@ -1,46 +1,64 @@
 import os
 import hashlib
+import pickle
 import subprocess
 import numpy as np
 import torch
 import torchvision
 import random
 
-class DS(torch.utils.data.Dataset):
+class DS_by_batch(torch.utils.data.Dataset):
+    def __init__(self, data_root,is_train=True,is_eval=False,max_index=10):
+        self.data_root = data_root
+
+        self.data_len =1281167# todo:remove constant max(os.listdir(data_root), key=lambda x: int(x.split("_")[1].split(".")[0]))
+        self.curr_batch_idx = 1
+        if is_eval:
+            assert  not is_train
+        if is_train:
+            assert  not is_eval
+
+        self.curr_batch = None
+        self.batch_len =128116# self.curr_batch["Y_train"].shape[0]
+        self.is_train = is_train
+        self.is_eval = is_eval
+        self.max_index = max_index
+
+
+
+    def restrart(self):
+        self.curr_batch_idx+=1
+        if self.curr_batch_idx > self.max_index:
+            self.curr_batch_idx = 1
+        self.curr_batch = None
+    def __getitem__(self, item):
+        if self.curr_batch is None:
+            self.curr_batch = load_databatch(data_folder=self.data_root,idx=self.curr_batch_idx if not self.is_eval else 10,name="train" if (self.is_train or self.is_eval) else "val")
+        return self.curr_batch["X_train"][item],self.curr_batch["Y_train"][item]
+
+    def __len__(self):
+        assert False
+        return self.data_len
+
+class DS_by_image(torch.utils.data.Dataset):
     def __init__(self, data_root):
         self.data_root = data_root
-        self.batch_len = 128116
-        self.data_len =1281167# todo:remove constant max(os.listdir(data_root), key=lambda x: int(x.split("_")[1].split(".")[0]))
-        self.buffer = {}
+        self.data_len =len(os.listdir(data_root))-1
+        self.labels = torch.load(os.path.join(data_root,"labels.pt"))
+        assert self.data_len == len(self.labels)
 
     def __getitem__(self, item):
-        batch_num = int(item/self.batch_len)+1
-        place_in_batch = item % self.batch_len
-        if batch_num > 10:
-            batch_num = 10
-            place_in_batch = item - 9 * self.batch_len
-        if batch_num in self.buffer:
-            batch = self.buffer[batch_num]
-        else:
-            batch = np.load(os.path.join(self.data_root,f"train_data_batch_{batch_num}"),allow_pickle=True)
-            self.buffer[batch_num] = batch
-            if len(self.buffer) > 3:
-                self.buffer.pop(random.choice(list(self.buffer.keys())))
-        data = torch.Tensor(batch["data"][place_in_batch].reshape((32, 32, 3)).transpose(2, 0, 1))
-        label = batch["labels"][place_in_batch] -1
-
-        return data,label
+        im_path = os.path.join(self.data_root, f"image_{item}.pt")
+        return torch.load(im_path), self.labels[item]
 
     def __len__(self):
         return self.data_len
-
-
 def create_data_loaders(datasets, samplers):
     dls = []
     for idx in range(len(datasets)):
-        if datasets[idx]:
+        if datasets[idx] != []:
             dl = torch.utils.data.DataLoader(
-                datasets[idx], batch_size=32, sampler=samplers[idx], shuffle=True if not samplers[idx] else None,
+                datasets[idx], batch_size=int(os.environ["batch_size"]), sampler=samplers[idx], shuffle=True if not samplers[idx] else None,
                 num_workers=0 if os.environ["my_computer"] == "True" else 2)
             dls.append(dl)
         else:
@@ -65,3 +83,47 @@ class Tb:
 
     def add_scalar(self, idx, *args):
         self.writers[idx].add_scalar(*args)
+
+def unpickle(file):
+    with open(file, 'rb') as fo:
+        dict = pickle.load(fo)
+    return dict
+def load_databatch(data_folder, idx, img_size=32,name="train"):
+    if name == "train":
+        data_file = os.path.join(data_folder, 'train_data_batch_')
+
+        d = unpickle(data_file + str(idx))
+    else:
+        data_file = os.path.join(data_folder, 'val_data')
+        d = unpickle(data_file)
+    x = d['data'].astype(np.float32)
+    y = d['labels']
+    if name =="train":
+        mean_image = d['mean']
+
+
+    # x = x/np.float32(255)
+    # mean_image = mean_image/np.float32(255)
+
+    # Labels are indexed from 1, shift it so that indexes start at 0
+    y = [i-1 for i in y]
+    data_size = x.shape[0]
+    if name =="train":
+        x -= mean_image
+
+    img_size2 = img_size * img_size
+
+    x = np.dstack((x[:, :img_size2], x[:, img_size2:2*img_size2], x[:, 2*img_size2:]))
+    x = x.reshape((x.shape[0], img_size, img_size, 3)).transpose(0, 3, 1, 2)
+
+    # create mirrored images
+    X_train = x[0:data_size, :, :, :]
+    Y_train = np.array(y[0:data_size])
+    # X_train_flip = X_train[:, :, :, ::-1]
+    # Y_train_flip = Y_train
+    # X_train = np.concatenate((X_train, X_train_flip), axis=0)
+    # Y_train = np.concatenate((Y_train, Y_train_flip), axis=0)
+
+    return dict(
+        X_train=X_train,
+        Y_train=Y_train)
