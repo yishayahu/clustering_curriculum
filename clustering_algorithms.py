@@ -36,7 +36,7 @@ class KmeanSklearn(AbstractClusteringAlgorithm):
                 to_pred.append(cluster_dict[str(hashed)].cpu().detach().numpy())
         else:
             to_pred = X
-        return self.model.predict(np.array(to_pred))
+        return self.model.predict(np.array(to_pred,dtype=np.double()))
 
 
 
