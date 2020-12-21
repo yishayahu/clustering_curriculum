@@ -26,7 +26,7 @@ class DS_by_batch(torch.utils.data.Dataset):
 
 
 
-    def restrart(self):
+    def restart(self):
         self.curr_batch_idx+=1
         if self.curr_batch_idx > self.max_index:
             self.curr_batch_idx = 1
