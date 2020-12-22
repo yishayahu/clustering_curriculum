@@ -15,12 +15,12 @@ import numpy as np
 def main(exp_name="imagenet_one_eval_kmeans_decrease_by_1"):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
-    my_computer = str(device) == "cpu"
+    my_computer = "False"
     print(torch.cuda.get_device_name(0))
-    os.environ["my_computer"] = str(my_computer)
+    os.environ["my_computer"] = my_computer
     os.environ["batch_size"] = "512"
     if str(my_computer) == "False":
-        os.environ["n_cluster"] = "2000" # todo: change back
+        os.environ["n_cluster"] = "500"  # todo: change back
     else:
         os.environ["n_cluster"] = "10"
     print(f"n clustrs is {os.environ['n_cluster']}")
@@ -38,7 +38,7 @@ def main(exp_name="imagenet_one_eval_kmeans_decrease_by_1"):
     train_set_clustered, eval_set = utils.DS_by_batch(data_root=os.path.join(os.path.dirname(os.getcwd()),"data","data_clustering","imagenet"),max_index=9),utils.DS_by_batch(data_root=os.path.join(os.path.dirname(os.getcwd()),"data","data_clustering","imagenet"),is_eval= True,is_train=False)
     tb = utils.Tb(exp_name=exp_name)
     print("clustreee")
-    clustered_smapler = ClusteredSampler(train_set_clustered, start_clustering=0, end_clustering=65000, tb=tb)
+    clustered_smapler = ClusteredSampler(train_set_clustered, start_clustering=10000 if str(my_computer) == "False" else 0, end_clustering=250000, tb=tb)
     train_dl, eval_dl, test_dl = utils.create_data_loaders([train_set_clustered, eval_set, test_set],
                                                            [clustered_smapler, RegularSampler(eval_set), RegularSampler(test_set)])
     train_dls.append(train_dl)
@@ -55,7 +55,7 @@ def main(exp_name="imagenet_one_eval_kmeans_decrease_by_1"):
                                    amsgrad=False)]
     trainer = Trainer(models=models, train_dls=train_dls, eval_dls=eval_dls, test_dls=test_dls,
                       loss_fn=nn.CrossEntropyLoss(), loss_fn_eval=nn.CrossEntropyLoss(reduction="none"),
-                      optimizers=optimizers, num_steps=75000, tb=tb,load=False)
+                      optimizers=optimizers, num_steps=300000, tb=tb,load=False)
     trainer.train_models()
 
 

@@ -6,6 +6,7 @@ import numpy as np
 import torch
 import torchvision
 import random
+import gc
 
 class DS_by_batch(torch.utils.data.Dataset):
     def __init__(self, data_root,is_train=True,is_eval=False,max_index=10):
@@ -33,6 +34,7 @@ class DS_by_batch(torch.utils.data.Dataset):
         if self.curr_batch_idx > self.max_index:
             self.curr_batch_idx = 1
         self.curr_batch = None
+        gc.collect()
     def __getitem__(self, item):
         if self.curr_batch is None:
             self.curr_batch = load_databatch(data_folder=self.data_root,idx=self.curr_batch_idx if not self.is_eval else 10,name="train" if (self.is_train or self.is_eval) else "val")

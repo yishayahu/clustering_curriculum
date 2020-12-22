@@ -58,9 +58,9 @@ class ClusteredSampler(torch.utils.data.Sampler):
         indexes = list(range(self.ds.batch_len))
         random.shuffle(indexes)
         if self.do_dist:
-            print(self.center)
+            print(f"self.center is {self.center}")
             curr_hiererchy = {}
-            self.center -= 1
+            self.center -= 2
             for i in range(self.n_cluster):
                 curr_hiererchy[self.hiererchy[i]] = np.exp(-0.2 * abs(self.center - i)) if i < self.center else 1
             # self.center = max(self.center, 0)
@@ -70,7 +70,7 @@ class ClusteredSampler(torch.utils.data.Sampler):
         for idx in indexes:
             img, label = self.ds[idx]
             if self.do_dist and self.cluster_dict:
-                hashed = get_md5sum(img.cpu().numpy().tobytes())
+                hashed = get_md5sum(img.numpy().tobytes())
                 cluster = self.cluster_dict[str(hashed)]
                 assert cluster in curr_hiererchy
                 if len(diffs[self.hiererchy.index(cluster)]) < 20:
