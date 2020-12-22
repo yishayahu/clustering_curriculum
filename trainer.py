@@ -259,17 +259,17 @@ class Trainer:
             assert idx in [0, 1]  # todo: remove
 
             curr_time, loss, acc, sub_acc = self.run_train(idx)
-            self.train_dls[idx].ds.collect_garbage()
+            self.train_dls[idx].dataset.collect_garbage()
             if (curr_time, loss, acc, sub_acc) != (0, 0, 0, 0):
                 self.save_epoch_results("train", idx, curr_time, loss, acc, sub_acc, self.curr_steps[idx])
             if self.models[idx].do_clustering():
 
                 curr_time, loss, acc, sub_acc = self.run_eval(idx)
-                self.eval_dls[idx].ds.collect_garbage()
+                self.eval_dls[idx].dataset.collect_garbage()
                 if (curr_time, loss, acc, sub_acc) != (0, 0, 0, 0):
                     self.save_epoch_results("eval", idx, curr_time, loss, acc, sub_acc, self.curr_steps[idx])
 
             curr_time, loss, acc, sub_acc = self.run_test(idx)
-            self.test_dls[idx].ds.collect_garbage()
+            self.test_dls[idx].dataset.collect_garbage()
             if (curr_time, loss, acc, sub_acc) != (0, 0, 0, 0):
                 self.save_epoch_results("test", idx, curr_time, loss, acc, sub_acc, self.curr_steps[idx])
