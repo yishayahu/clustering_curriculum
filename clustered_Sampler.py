@@ -70,7 +70,7 @@ class ClusteredSampler(torch.utils.data.Sampler):
         for idx in indexes:
             img, label = self.ds[idx]
             if self.do_dist and self.cluster_dict:
-                hashed = get_md5sum(img.numpy().tobytes())
+                hashed = get_md5sum(img.tobytes())
                 cluster = self.cluster_dict[str(hashed)]
                 assert cluster in curr_hiererchy
                 if len(diffs[self.hiererchy.index(cluster)]) < 20:
