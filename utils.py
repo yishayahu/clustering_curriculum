@@ -8,47 +8,53 @@ import torchvision
 import random
 import gc
 
+
 class DS_by_batch(torch.utils.data.Dataset):
-    def __init__(self, data_root,is_train=True,is_eval=False,max_index=10):
+    def __init__(self, data_root, is_train=True, is_eval=False, max_index=10):
         self.data_root = data_root
 
-        self.data_len =1281167# todo:remove constant max(os.listdir(data_root), key=lambda x: int(x.split("_")[1].split(".")[0]))
+        self.data_len = 1281167  # todo:remove constant max(os.listdir(data_root), key=lambda x: int(x.split("_")[1].split(".")[0]))
         self.curr_batch_idx = 1
         if is_eval:
-            assert  not is_train
+            assert not is_train
         if is_train:
-            assert  not is_eval
+            assert not is_eval
 
         self.curr_batch = None
-        self.batch_len =128116 # self.curr_batch["Y_train"].shape[0]
+        self.batch_len = 128116  # self.curr_batch["Y_train"].shape[0]
         if not is_train and not is_eval:
             self.batch_len = 50000
         self.is_train = is_train
         self.is_eval = is_eval
         self.max_index = max_index
 
-
-
     def restart(self):
-        self.curr_batch_idx+=1
+        self.curr_batch_idx += 1
         if self.curr_batch_idx > self.max_index:
             self.curr_batch_idx = 1
+        self.collect_garbage()
+
+    def collect_garbage(self):
         self.curr_batch = None
         gc.collect()
+
     def __getitem__(self, item):
         if self.curr_batch is None:
-            self.curr_batch = load_databatch(data_folder=self.data_root,idx=self.curr_batch_idx if not self.is_eval else 10,name="train" if (self.is_train or self.is_eval) else "val")
-        return self.curr_batch["X_train"][item],self.curr_batch["Y_train"][item]
+            self.curr_batch = load_databatch(data_folder=self.data_root,
+                                             idx=self.curr_batch_idx if not self.is_eval else 10,
+                                             name="train" if (self.is_train or self.is_eval) else "val")
+        return self.curr_batch["X_train"][item], self.curr_batch["Y_train"][item]
 
     def __len__(self):
         assert False
         return self.data_len
 
+
 class DS_by_image(torch.utils.data.Dataset):
     def __init__(self, data_root):
         self.data_root = data_root
-        self.data_len =len(os.listdir(data_root))-1
-        self.labels = torch.load(os.path.join(data_root,"labels.pt"))
+        self.data_len = len(os.listdir(data_root)) - 1
+        self.labels = torch.load(os.path.join(data_root, "labels.pt"))
         assert self.data_len == len(self.labels)
 
     def __getitem__(self, item):
@@ -57,12 +63,15 @@ class DS_by_image(torch.utils.data.Dataset):
 
     def __len__(self):
         return self.data_len
+
+
 def create_data_loaders(datasets, samplers):
     dls = []
     for idx in range(len(datasets)):
         if datasets[idx] != []:
             dl = torch.utils.data.DataLoader(
-                datasets[idx], batch_size=int(os.environ["batch_size"]), sampler=samplers[idx], shuffle=True if not samplers[idx] else None,
+                datasets[idx], batch_size=int(os.environ["batch_size"]), sampler=samplers[idx],
+                shuffle=True if not samplers[idx] else None,
                 num_workers=0)
             dls.append(dl)
         else:
@@ -88,11 +97,14 @@ class Tb:
     def add_scalar(self, idx, *args):
         self.writers[idx].add_scalar(*args)
 
+
 def unpickle(file):
     with open(file, 'rb') as fo:
         dict = pickle.load(fo)
     return dict
-def load_databatch(data_folder, idx, img_size=32,name="train"):
+
+
+def load_databatch(data_folder, idx, img_size=32, name="train"):
     if name == "train":
         data_file = os.path.join(data_folder, 'train_data_batch_')
 
@@ -102,22 +114,21 @@ def load_databatch(data_folder, idx, img_size=32,name="train"):
         d = unpickle(data_file)
     x = d['data'].astype(np.float32)
     y = d['labels']
-    if name =="train":
+    if name == "train":
         mean_image = d['mean']
-
 
     # x = x/np.float32(255)
     # mean_image = mean_image/np.float32(255)
 
     # Labels are indexed from 1, shift it so that indexes start at 0
-    y = [i-1 for i in y]
+    y = [i - 1 for i in y]
     data_size = x.shape[0]
-    if name =="train":
+    if name == "train":
         x -= mean_image
 
     img_size2 = img_size * img_size
 
-    x = np.dstack((x[:, :img_size2], x[:, img_size2:2*img_size2], x[:, 2*img_size2:]))
+    x = np.dstack((x[:, :img_size2], x[:, img_size2:2 * img_size2], x[:, 2 * img_size2:]))
     x = x.reshape((x.shape[0], img_size, img_size, 3)).transpose(0, 3, 1, 2)
 
     # create mirrored images
