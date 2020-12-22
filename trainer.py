@@ -1,3 +1,4 @@
+import gc
 import json
 import os
 import pickle
@@ -256,13 +257,16 @@ class Trainer:
                 break
             idx = np.argmin(self.curr_steps)
             assert idx in [0, 1]  # todo: remove
+            gc.collect()
             curr_time, loss, acc, sub_acc = self.run_train(idx)
             if (curr_time, loss, acc, sub_acc) != (0, 0, 0, 0):
                 self.save_epoch_results("train", idx, curr_time, loss, acc, sub_acc, self.curr_steps[idx])
             if self.models[idx].do_clustering():
+                gc.collect()
                 curr_time, loss, acc, sub_acc = self.run_eval(idx)
                 if (curr_time, loss, acc, sub_acc) != (0, 0, 0, 0):
                     self.save_epoch_results("eval", idx, curr_time, loss, acc, sub_acc, self.curr_steps[idx])
+            gc.collect()
             curr_time, loss, acc, sub_acc = self.run_test(idx)
             if (curr_time, loss, acc, sub_acc) != (0, 0, 0, 0):
                 self.save_epoch_results("test", idx, curr_time, loss, acc, sub_acc, self.curr_steps[idx])
