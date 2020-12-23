@@ -1,3 +1,4 @@
+import gc
 import random
 
 import torch
@@ -123,6 +124,7 @@ class ResNet(nn.Module):
                  groups=1, width_per_group=64, replace_stride_with_dilation=None,
                  norm_layer=None, clustering_algorithm=None):
         super(ResNet, self).__init__()
+
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
         self._norm_layer = norm_layer
@@ -156,6 +158,8 @@ class ResNet(nn.Module):
         # clustering area
         self.cluster_dict = {}
         self.clustering_algorithm = clustering_algorithm  #
+        self.clustering_done = False
+        self.test_time = False
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -200,7 +204,10 @@ class ResNet(nn.Module):
                                 norm_layer=norm_layer))
 
         return nn.Sequential(*layers)
-
+    def test_time_activate(self):
+        self.test_time = True
+    def done_test(self):
+        self.test_time = False
     def _forward_impl(self, x):
         # See note [TorchScript super()]
         orig_x = x.cpu()
@@ -217,10 +224,23 @@ class ResNet(nn.Module):
 
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
-        if self.clustering_algorithm is not None:
+
+        if self.clustering_algorithm is not None and not self.clustering_done and not self.test_time:
+            keys = []
+            arrays = []
             for image_index in range(x.shape[0]):
                 hashed = get_md5sum(orig_x[image_index].numpy().tobytes())
-                self.cluster_dict[str(hashed)] = x[image_index].cpu()
+                keys.append(str(hashed))
+                arrays.append(x[image_index].cpu().detach().numpy().astype(np.int16))
+            self.clustering_algorithm.partial_fit(arrays)
+            labels = self.clustering_algorithm.predict(arrays)
+            assert len(keys) == len(labels)
+            for k,l in zip(keys,labels):
+                self.cluster_dict[k] = int(l)
+            keys = None
+            arrays = None
+            labels = None
+            gc.collect()
         x = self.fc(x)
 
         return x
@@ -231,37 +251,8 @@ class ResNet(nn.Module):
     def get_clusters(self):
         if not self.clustering_algorithm:
             raise Exception("get clusters need clustering algo that is not None")
-        arrays = []
-        keys = []
-        for k,v in self.cluster_dict.items():
-            if random.random() < 0.6:
-                continue
-            keys.append(k)
-            arrays.append(v.cpu().detach().numpy().astype(np.int16))
-        self.clustering_algorithm.fit(arrays)
-        labels = self.clustering_algorithm.labels_
-        to_label = {}
-        for idx, k in enumerate(keys):
-            to_label[k] = int(labels[idx])
-        keys_done = set(keys)
-        arrays = []
-        keys = []
-
-        for k,v in self.cluster_dict.items():
-            if k not in keys_done:
-                arrays.append(v.cpu().detach().numpy().astype(np.int16))
-                keys.append(k)
-                if len(keys) > 100000:
-                    labels = self.clustering_algorithm.predict(arrays)
-                    for idx, k1 in enumerate(keys):
-                        to_label[k1] = int(labels[idx])
-                    arrays = []
-                    keys = []
-        if len(keys) > 0:
-            labels = self.clustering_algorithm.predict(arrays)
-            for idx, k1 in enumerate(keys):
-                to_label[k1] = int(labels[idx])
-        return to_label
+        self.clustering_done = True
+        return self.cluster_dict
 
 
 def _resnet(arch, block, layers, pretrained, progress, **kwargs):

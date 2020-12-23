@@ -26,7 +26,7 @@ def main(exp_name="imagenet_one_eval_kmeans_decrease_by_1"):
     print(f"n clustrs is {os.environ['n_cluster']}")
 
     models = [resnet50(num_classes=1000,
-                       clustering_algorithm=clustering_algorithms.KmeanSklearn(n_clusters=int(os.environ['n_cluster'])),
+                       clustering_algorithm=clustering_algorithms.KmeanSklearnByBatch(n_clusters=int(os.environ['n_cluster'])),
                        pretrained=False),
               resnet50(num_classes=1000, pretrained=False)]
     for model in models:
@@ -38,7 +38,7 @@ def main(exp_name="imagenet_one_eval_kmeans_decrease_by_1"):
     train_set_clustered, eval_set = utils.DS_by_batch(data_root=os.path.join(os.path.dirname(os.getcwd()),"data","data_clustering","imagenet"),max_index=9),utils.DS_by_batch(data_root=os.path.join(os.path.dirname(os.getcwd()),"data","data_clustering","imagenet"),is_eval= True,is_train=False)
     tb = utils.Tb(exp_name=exp_name)
     print("clustreee")
-    clustered_smapler = ClusteredSampler(train_set_clustered, start_clustering=10000 if str(my_computer) == "False" else 0, end_clustering=250000, tb=tb)
+    clustered_smapler = ClusteredSampler(train_set_clustered, start_clustering=10000 if str(my_computer) == "False" else 15, end_clustering=250000, tb=tb)
     train_dl, eval_dl, test_dl = utils.create_data_loaders([train_set_clustered, eval_set, test_set],
                                                            [clustered_smapler, RegularSampler(eval_set), RegularSampler(test_set)])
     train_dls.append(train_dl)

@@ -190,6 +190,7 @@ class Trainer:
         since = time.time()
         optimizer = self.optimizers[idx]
         epoch_len = 0
+        model.test_time_activate()
         for inputs, labels in dl:
             if inputs.shape[0] == 1:
                 print("skipped")
@@ -204,18 +205,18 @@ class Trainer:
                 epoch_len += 1
                 loss = self.loss_fn(outputs, labels)
                 _, preds = torch.max(outputs, 1)
-                if model.do_clustering() and self.clusters:
-                    cluster_labels = model.clustering_algorithm.predict(inputs, model.cluster_dict, True)
-                    is_in_train = self.train_dls[idx].sampler.is_in_train(cluster_labels)
-                    assert len(is_in_train) == len(preds)
-                    for pred, flag, label in zip(preds, is_in_train, labels.data):
-                        if flag:
-                            if pred == label:
-                                sub_running_corrects += 1
-                            sub_running_corrects_disc += 1
+                # if model.do_clustering() and self.clusters:
+                #     cluster_labels = model.clustering_algorithm.predict(inputs, model.cluster_dict, True)
+                #     is_in_train = self.train_dls[idx].sampler.is_in_train(cluster_labels)
+                #     assert len(is_in_train) == len(preds)
+                #     for pred, flag, label in zip(preds, is_in_train, labels.data):
+                #         if flag:
+                #             if pred == label:
+                #                 sub_running_corrects += 1
+                #             sub_running_corrects_disc += 1
                 running_loss += loss.cpu().item() * inputs.size(0)
                 running_corrects += torch.sum(preds == labels.data).cpu()
-
+        model.done_test()
         self.curr_steps[idx] = curr_step
         time_elapsed = time.time() - since
         epoch_loss = running_loss / ((epoch_len - 1) * int(os.environ["batch_size"]))

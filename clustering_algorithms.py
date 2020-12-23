@@ -16,6 +16,29 @@ class AbstractClusteringAlgorithm:
         raise NotImplemented()
 
 
+class KmeanSklearnByBatch(AbstractClusteringAlgorithm):
+    def __init__(self, **kwargs):
+        from sklearn.cluster import MiniBatchKMeans
+        self.model = MiniBatchKMeans(**kwargs)
+    def fit(self, x: [np.ndarray]):
+        self.model.fit(x)
+
+    @property
+    def labels_(self):
+        return self.model.labels_
+    def partial_fit(self,x: [np.ndarray]):
+        self.model.partial_fit(x)
+    def predict(self,X,cluster_dict=None,from_image = False):
+        to_pred = []
+        if from_image:
+            assert cluster_dict is not None
+            for x in X:
+                hashed = get_md5sum(x.cpu().numpy().tobytes())
+                to_pred.append(cluster_dict[str(hashed)].cpu().detach().numpy())
+        else:
+            to_pred = X
+        return self.model.predict(np.array(to_pred,dtype=np.double()))
+
 class KmeanSklearn(AbstractClusteringAlgorithm):
     def __init__(self, **kwargs):
         from sklearn.cluster import KMeans
