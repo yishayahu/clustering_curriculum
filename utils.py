@@ -6,7 +6,34 @@ import numpy as np
 import torch
 import torchvision
 import random
+import torchvision.transforms as tvtf
 import gc
+
+
+class Cifar10Ds(torch.utils.data.Dataset):
+    def __init__(self, data_root, is_train=True, is_eval=False, max_index=5):
+
+        self.ds = torchvision.datasets.CIFAR10(
+            root=data_root, download=False, train=is_train or is_eval,
+            transform=tvtf.ToTensor()  # Convert PIL image to pytorch Tensor
+
+        )
+        if is_eval and not is_train:
+            self.ds = torch.utils.data.Subset(self.ds, range(40000, 50000))
+        elif is_train and not is_eval and max_index == 4:
+            self.ds = torch.utils.data.Subset(self.ds, range(40000))
+
+    def restart(self):
+        self.collect_garbage()
+
+    def collect_garbage(self):
+        gc.collect()
+
+    def __getitem__(self, item):
+        return self.ds[item]
+
+    def __len__(self):
+        return len(self.ds)
 
 
 class DS_by_batch(torch.utils.data.Dataset):
@@ -21,12 +48,13 @@ class DS_by_batch(torch.utils.data.Dataset):
             assert not is_eval
 
         self.curr_batch = None
-        self.batch_len = 128116  if os.environ["my_computer"] == "False" else (512 *5)# self.curr_batch["Y_train"].shape[0]
+        self.batch_len = 128116 if os.environ["my_computer"] == "False" else (
+                    512 * 5)  # self.curr_batch["Y_train"].shape[0]
         if not is_train and not is_eval:
-            self.batch_len = 50000 if os.environ["my_computer"] == "False" else (512 *5)
+            self.batch_len = 50000 if os.environ["my_computer"] == "False" else (512 * 5)
         self.is_train = is_train
         self.is_eval = is_eval
-        self.max_index = max_index
+        self.max_index = max_index if os.environ["my_computer"] == "False" else 1
 
     def restart(self):
         self.curr_batch_idx += 1
@@ -47,7 +75,7 @@ class DS_by_batch(torch.utils.data.Dataset):
 
     def __len__(self):
         assert False
-        return self.data_len
+        return self.batch_len
 
 
 class DS_by_image(torch.utils.data.Dataset):
@@ -81,7 +109,7 @@ def create_data_loaders(datasets, samplers):
 
 def get_md5sum(bytes1):
     hasher = hashlib.md5(bytes1)
-    # hasher.update(bytes1)
+
     return hasher.hexdigest()
 
 
@@ -107,7 +135,6 @@ def unpickle(file):
 def load_databatch(data_folder, idx, img_size=32, name="train"):
     if name == "train":
         data_file = os.path.join(data_folder, 'train_data_batch_')
-
         d = unpickle(data_file + str(idx))
     else:
         data_file = os.path.join(data_folder, 'val_data')

@@ -15,12 +15,14 @@ import numpy as np
 def main(exp_name="imagenet_one_eval_kmeans_decrease_by_1"):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
+    use_imagenet = True
     my_computer = "False"
     print(torch.cuda.get_device_name(0))
     os.environ["my_computer"] = my_computer
     os.environ["batch_size"] = "512"
+
     if str(my_computer) == "False":
-        os.environ["n_cluster"] = "500"  # todo: change back
+        os.environ["n_cluster"] = "500" if use_imagenet else "50"  # todo: change back
     else:
         os.environ["n_cluster"] = "10"
     print(f"n clustrs is {os.environ['n_cluster']}")
@@ -33,9 +35,13 @@ def main(exp_name="imagenet_one_eval_kmeans_decrease_by_1"):
         model.to(device=device)
     train_dls, eval_dls, test_dls = [], [], []
     # create cluster resnet data
-    train_set_normal, test_set = utils.DS_by_batch(data_root=os.path.join(os.path.dirname(os.getcwd()),"data","data_clustering","imagenet"),max_index=10),utils.DS_by_batch(data_root=os.path.join(os.path.dirname(os.getcwd()),"data","data_clustering","imagenet"),is_train=False)
 
-    train_set_clustered, eval_set = utils.DS_by_batch(data_root=os.path.join(os.path.dirname(os.getcwd()),"data","data_clustering","imagenet"),max_index=9),utils.DS_by_batch(data_root=os.path.join(os.path.dirname(os.getcwd()),"data","data_clustering","imagenet"),is_eval= True,is_train=False)
+    if use_imagenet:
+        train_set_normal, test_set = utils.DS_by_batch(data_root=os.path.join(os.path.dirname(os.getcwd()),"data","data_clustering","imagenet"),max_index=10),utils.DS_by_batch(data_root=os.path.join(os.path.dirname(os.getcwd()),"data","data_clustering","imagenet"),is_train=False,is_eval=False)
+        train_set_clustered, eval_set = utils.DS_by_batch(data_root=os.path.join(os.path.dirname(os.getcwd()),"data","data_clustering","imagenet"),max_index=9),utils.DS_by_batch(data_root=os.path.join(os.path.dirname(os.getcwd()),"data","data_clustering","imagenet"),is_eval= True,is_train=False)
+    else:
+        train_set_normal, test_set = utils.Cifar10Ds(data_root=os.path.join(os.path.dirname(os.getcwd()),"data","data_clustering"),max_index=5),utils.Cifar10Ds(data_root=os.path.join(os.path.dirname(os.getcwd()),"data","data_clustering"),is_train=False,is_eval=False)
+        train_set_clustered, eval_set = utils.Cifar10Ds(data_root=os.path.join(os.path.dirname(os.getcwd()),"data","data_clustering"),max_index=4),utils.Cifar10Ds(data_root=os.path.join(os.path.dirname(os.getcwd()),"data","data_clustering"),is_eval= True,is_train=False)
     tb = utils.Tb(exp_name=exp_name)
     print("clustreee")
     clustered_smapler = ClusteredSampler(train_set_clustered, start_clustering=10000 if str(my_computer) == "False" else 15, end_clustering=250000, tb=tb)

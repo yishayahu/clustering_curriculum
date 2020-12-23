@@ -76,19 +76,28 @@ class ClusteredSampler(torch.utils.data.Sampler):
                 #     continue
                 cluster = self.cluster_dict[str(hashed)]
                 assert cluster in curr_hiererchy
-                if len(diffs[self.hiererchy.index(cluster)]) < 20:
-                    diffs[self.hiererchy.index(cluster)].append(img)
+                try:
+                    if len(diffs[self.hiererchy.index(cluster)]) < 20:
+                        diffs[self.hiererchy.index(cluster)].append(torch.Tensor(img))
+                except:
+                    print("excpetino 1")
+                    print(type(img))
+                    pass
                 randi = random.random()
                 if randi < curr_hiererchy[cluster]:
                     yield idx
             else:
                 yield idx
         self.ds.restart()
-        for k, v in diffs.items():
-            if v:
-                self.tb.add_images(0, images=v, title=str(k), step=self.n_cluster - self.center)
-        # raise StopIteration
 
+        for k, v in diffs.items():
+            try:
+                if v:
+                    self.tb.add_images(0, images=v, title=str(k), step=self.n_cluster - self.center)
+            except:
+                print("excpetino 2")
+                print(type(v))
+                pass
 
 class RegularSampler(torch.utils.data.Sampler):
     def __init__(self,data_source):

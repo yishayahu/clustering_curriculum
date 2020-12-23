@@ -68,7 +68,7 @@ class Trainer:
         running_corrects = 0
 
         optimizer = self.optimizers[idx]
-        epoch_len = 0
+        num_examples = 0
         if self.load and curr_step == 0:
             for ckpt in os.listdir("ckpt"):
                 _, ckpt_idx, _ = ckpt.split(".")[0].split("_")
@@ -98,19 +98,15 @@ class Trainer:
             loss = self.loss_fn(outputs, labels)
             _, preds = torch.max(outputs, 1)
             curr_step += 1
-            epoch_len += 1
             loss.backward()
             optimizer.step()
             running_loss += loss.cpu().item() * inputs.size(0)
+            num_examples += inputs.size(0)
             running_corrects += torch.sum(preds == labels.data).cpu()
-
-            max_epoch_len = 2000 if os.environ["my_computer"] == "False" else 5
-            if epoch_len > max_epoch_len:
-                break
         self.curr_steps[idx] = curr_step
         time_elapsed = time.time() - since
-        epoch_loss = running_loss / ((epoch_len - 1) * int(os.environ["batch_size"]))
-        epoch_acc = running_corrects.double() / ((epoch_len - 1) * int(os.environ["batch_size"]))
+        epoch_loss = running_loss / num_examples
+        epoch_acc = running_corrects.double() / num_examples
         self.save_ckpt(model=model, optimizer=optimizer, step=curr_step, idx=idx)
         if self.last_bar_update < curr_step:
             print(idx)
@@ -131,26 +127,20 @@ class Trainer:
         since = time.time()
         eval_loss_dict = {}
         optimizer = self.optimizers[idx]
-        epoch_len = 0
+        num_examples = 0
         for inputs, labels in dl:
             if inputs.shape[0] == 1:
                 print("skipped")
                 continue
             inputs = inputs.to(self.device)
             labels = labels.to(self.device).long()
-
             # zero the parameter gradients
-
             # forward
             # track history if only in train
             with torch.no_grad():
                 optimizer.zero_grad()
                 model.zero_grad()
                 outputs = model(inputs)
-                epoch_len += 1
-                max_epoch_len = 2000 if os.environ["my_computer"] == "False" else 5
-                if epoch_len > max_epoch_len:
-                    break
                 loss = self.loss_fn(outputs, labels)
                 _, preds = torch.max(outputs, 1)
                 if model.do_clustering():
@@ -159,11 +149,12 @@ class Trainer:
                         hashed = get_md5sum(curr_input.cpu().numpy().tobytes())
                         eval_loss_dict[str(hashed)] = temp_loss
                 running_loss += loss.cpu().item() * inputs.size(0)
+                num_examples+= inputs.size(0)
                 running_corrects += torch.sum(preds == labels.data).cpu()
         self.curr_steps[idx] = curr_step
         time_elapsed = time.time() - since
-        epoch_loss = running_loss / ((epoch_len - 1) * int(os.environ["batch_size"]))
-        epoch_acc = running_corrects.double() / ((epoch_len - 1) * int(os.environ["batch_size"]))
+        epoch_loss = running_loss / num_examples
+        epoch_acc = running_corrects.double() / num_examples
         if model.do_clustering() and self.train_dls[idx].sampler.start_clustering < curr_step:
             if self.clusters is None:
                 self.clusters = model.get_clusters()
@@ -189,7 +180,7 @@ class Trainer:
         sub_running_corrects_disc = 0
         since = time.time()
         optimizer = self.optimizers[idx]
-        epoch_len = 0
+        num_examples = 0
         model.test_time_activate()
         for inputs, labels in dl:
             if inputs.shape[0] == 1:
@@ -202,7 +193,7 @@ class Trainer:
                 optimizer.zero_grad()
                 model.zero_grad()
                 outputs = model(inputs)
-                epoch_len += 1
+
                 loss = self.loss_fn(outputs, labels)
                 _, preds = torch.max(outputs, 1)
                 # if model.do_clustering() and self.clusters:
@@ -215,12 +206,13 @@ class Trainer:
                 #                 sub_running_corrects += 1
                 #             sub_running_corrects_disc += 1
                 running_loss += loss.cpu().item() * inputs.size(0)
+                num_examples+= inputs.size(0)
                 running_corrects += torch.sum(preds == labels.data).cpu()
         model.done_test()
         self.curr_steps[idx] = curr_step
         time_elapsed = time.time() - since
-        epoch_loss = running_loss / ((epoch_len - 1) * int(os.environ["batch_size"]))
-        epoch_acc = running_corrects.double() / ((epoch_len - 1) * int(os.environ["batch_size"]))
+        epoch_loss = running_loss / num_examples
+        epoch_acc = running_corrects.double() / num_examples
         if sub_running_corrects_disc == 0:
             sub_epoch_acc = None
         else:
