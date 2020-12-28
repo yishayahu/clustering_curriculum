@@ -53,7 +53,7 @@ class ClusteredSampler(torch.utils.data.Sampler):
         assert self.cluster_dict
         print(f"self.center is {self.center}")
         curr_hiererchy = {}
-        self.center -= 2
+        self.center -= (2 if os.environ["use_imagenet"] == "True" else 1)
         for i in range(self.n_cluster):
             curr_hiererchy[self.hiererchy[i]] = np.exp(-0.2 * abs(self.center - i)) if i < self.center else 1
         diffs = {}

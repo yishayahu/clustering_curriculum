@@ -2,7 +2,11 @@ import os
 import torch
 import torchvision
 import torchvision.transforms as tvtf
-
+use_imagenet = True
+my_computer = "False"
+os.environ["my_computer"] = my_computer
+os.environ["batch_size"] = "1024"
+os.environ["use_imagenet"] = str(use_imagenet)
 import torch.nn as nn
 
 from clustered_Sampler import ClusteredSampler,RegularSampler
@@ -12,15 +16,12 @@ from trainer import Trainer
 import clustering_algorithms
 import numpy as np
 
-def main(exp_name="cifar_10"):
+def main(exp_name="debug"):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
-    use_imagenet = True
-    my_computer = "False"
+
     print(torch.cuda.get_device_name(0))
-    os.environ["my_computer"] = my_computer
-    os.environ["batch_size"] = "1024"
-    os.environ["use_imagenet"] = str(use_imagenet)
+
 
     if str(my_computer) == "False":
         os.environ["n_cluster"] = "500" if use_imagenet else "50"
@@ -50,7 +51,7 @@ def main(exp_name="cifar_10"):
     elif use_imagenet:
         start_clustering = 10000
     else:
-        start_clustering = 2500
+        start_clustering = 1000
     clustered_smapler = ClusteredSampler(train_set_normal, tb=tb)
     train_dl, eval_dl, test_dl = utils.create_data_loaders([train_set_clustered, eval_set, test_set],
                                                            [RegularSampler(train_set_clustered), RegularSampler(eval_set), RegularSampler(test_set)])

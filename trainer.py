@@ -10,6 +10,7 @@ import torchvision.transforms.functional as F
 
 
 import utils
+from label_to_str import label_to_str
 from utils import get_md5sum, Tb
 import numpy as np
 import progressbar
@@ -84,7 +85,8 @@ class Trainer:
         epoch_viz = False
         for inputs, labels in dl:
             if not epoch_viz:
-                self.tb.add_images(idx=idx,images=inputs[:20],title=f"train {labels[:20]}",step=curr_step)
+                temp_labels = [label_to_str[x.item()] for x in labels[:20]]
+                self.tb.add_images(idx=idx,images=inputs[:20],title=f"train {temp_labels}",step=curr_step)
                 epoch_viz = True
             if inputs.shape[0] == 1:
                 print("skipped")
@@ -183,13 +185,14 @@ class Trainer:
         optimizer = self.optimizers[idx]
         num_examples = 0
         model.test_time_activate()
-        epoch_viz = True
+        epoch_viz = False
         for inputs, labels in dl:
             if inputs.shape[0] == 1:
                 print("skipped")
                 continue
             if not epoch_viz:
-                self.tb.add_images(idx=idx,images=inputs[:20],title=f"test {labels[:20]}",step=curr_step)
+                temp_labels = [label_to_str[x.item()] for x in labels[:20]]
+                self.tb.add_images(idx=idx,images=inputs[:20],title=f"test {temp_labels}",step=curr_step)
                 epoch_viz = True
             inputs = inputs.to(self.device)
             labels = labels.to(self.device).long()

@@ -152,8 +152,8 @@ def load_databatch(data_folder, idx, img_size=32, name="train"):
     # Labels are indexed from 1, shift it so that indexes start at 0
     y = [i - 1 for i in y]
     data_size = x.shape[0]
-    if name == "train":
-        x -= mean_image
+    # if name == "train":
+    #     x -= mean_image
 
     img_size2 = img_size * img_size
 
