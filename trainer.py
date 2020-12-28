@@ -189,7 +189,7 @@ class Trainer:
                 print("skipped")
                 continue
             if not epoch_viz:
-                self.tb.add_images(idx=idx,images=inputs[:20],title=f"train {labels[:20]}",step=curr_step)
+                self.tb.add_images(idx=idx,images=inputs[:20],title=f"test {labels[:20]}",step=curr_step)
                 epoch_viz = True
             inputs = inputs.to(self.device)
             labels = labels.to(self.device).long()
