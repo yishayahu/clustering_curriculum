@@ -7,9 +7,7 @@ import torchvision.transforms.functional as F
 
 
 class ClusteredSampler(torch.utils.data.Sampler):
-    def __init__(self, data_source, start_clustering, end_clustering, tb):
-        self.start_clustering = start_clustering
-        self.end_clustering = end_clustering
+    def __init__(self, data_source, tb):
         self.ds = data_source
         self.cluster_dict = None
         self.hiererchy = []
@@ -19,32 +17,27 @@ class ClusteredSampler(torch.utils.data.Sampler):
         self.center = self.n_cluster
         self.tb = tb
 
-    def need_distrbition(self, step):
-        return self.start_clustering <= step <= self.end_clustering and self.center > 0
 
-    def create_distribiouns(self, cluster_dict, eval_loss_dict, step):
+
+    def create_distribiouns(self, cluster_dict, eval_loss_dict):
         losses = np.zeros(self.n_cluster)
         amounts = np.zeros(self.n_cluster)
-        self.step = step
-        self.do_dist = self.start_clustering <= step <= self.end_clustering and self.center > 0
-        if self.center <= 0 or step > self.end_clustering:
-            return "done"
-        if self.do_dist and self.cluster_dict is None:
-            for k, v in eval_loss_dict.items():
-                losses[cluster_dict[k]] += v
-                amounts[cluster_dict[k]] += 1
-            losses_mean = np.mean(losses)
-            for idx in range(len(amounts)):
-                if amounts[idx] == 0:
-                    assert losses[idx] == 0
-                    losses[idx] = losses_mean
-                    amounts[idx] += 1
-            while len(self.hiererchy) < self.n_cluster:
-                max_idx = np.argmax(losses)
-                self.hiererchy.append(max_idx)
-                losses[max_idx] = -1
-            self.cluster_dict = cluster_dict
-        return "working"
+        assert self.cluster_dict is None
+        assert self.center > 0
+        for k, v in eval_loss_dict.items():
+            losses[cluster_dict[k]] += v
+            amounts[cluster_dict[k]] += 1
+        losses_mean = np.mean(losses)
+        for idx in range(len(amounts)):
+            if amounts[idx] == 0:
+                assert losses[idx] == 0
+                losses[idx] = losses_mean
+                amounts[idx] += 1
+        while len(self.hiererchy) < self.n_cluster:
+            max_idx = np.argmax(losses)
+            self.hiererchy.append(max_idx)
+            losses[max_idx] = -1
+        self.cluster_dict = cluster_dict
 
     def is_in_train(self, labels):
         to_return = [True] * len(labels)
@@ -57,26 +50,22 @@ class ClusteredSampler(torch.utils.data.Sampler):
     def __iter__(self):
         indexes = list(range(self.ds.batch_len))
         random.shuffle(indexes)
-        if self.do_dist:
-            print(f"self.center is {self.center}")
-            curr_hiererchy = {}
-            self.center -= 2
-            for i in range(self.n_cluster):
-                curr_hiererchy[self.hiererchy[i]] = np.exp(-0.2 * abs(self.center - i)) if i < self.center else 1
-            # self.center = max(self.center, 0)
+        assert self.cluster_dict
+        print(f"self.center is {self.center}")
+        curr_hiererchy = {}
+        self.center -= 2
+        for i in range(self.n_cluster):
+            curr_hiererchy[self.hiererchy[i]] = np.exp(-0.2 * abs(self.center - i)) if i < self.center else 1
         diffs = {}
         for i in range(self.n_cluster):
             diffs[i] = []
         for idx in indexes:
             img, label = self.ds[idx]
-            if self.do_dist and self.cluster_dict:
+            if self.center >= 0:
                 if os.environ["use_imagenet"] == "True":
                     hashed = get_md5sum(img.tobytes())
                 else:
                     hashed = get_md5sum(img.cpu().numpy().tobytes())
-                # if str(hashed) not in self.cluster_dict:
-                #     yield idx
-                #     continue
                 cluster = self.cluster_dict[str(hashed)]
                 assert cluster in curr_hiererchy
                 try:
@@ -102,9 +91,11 @@ class ClusteredSampler(torch.utils.data.Sampler):
                 print(type(v))
                 pass
 
+
 class RegularSampler(torch.utils.data.Sampler):
-    def __init__(self,data_source):
+    def __init__(self, data_source):
         self.ds = data_source
+
     def __iter__(self):
         indexes = list(range(self.ds.batch_len))
         random.shuffle(indexes)

@@ -12,7 +12,7 @@ from trainer import Trainer
 import clustering_algorithms
 import numpy as np
 
-def main(exp_name="imagenet_one_eval_kmeans_decrease_by_1"):
+def main(exp_name="cifar_10"):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
     use_imagenet = True
@@ -23,15 +23,15 @@ def main(exp_name="imagenet_one_eval_kmeans_decrease_by_1"):
     os.environ["use_imagenet"] = str(use_imagenet)
 
     if str(my_computer) == "False":
-        os.environ["n_cluster"] = "500" if use_imagenet else "50"  # todo: change back
+        os.environ["n_cluster"] = "500" if use_imagenet else "50"
     else:
         os.environ["n_cluster"] = "10"
     print(f"n clustrs is {os.environ['n_cluster']}")
 
-    models = [resnet50(num_classes=1000,
+    models = [resnet50(num_classes=1000 if use_imagenet else 10,
                        clustering_algorithm=clustering_algorithms.KmeanSklearnByBatch(n_clusters=int(os.environ['n_cluster'])),
                        pretrained=False),
-              resnet50(num_classes=1000, pretrained=False)]
+              resnet50(num_classes=1000 if use_imagenet else 10, pretrained=False)]
     for model in models:
         model.to(device=device)
     train_dls, eval_dls, test_dls = [], [], []
@@ -51,9 +51,9 @@ def main(exp_name="imagenet_one_eval_kmeans_decrease_by_1"):
         start_clustering = 10000
     else:
         start_clustering = 2500
-    clustered_smapler = ClusteredSampler(train_set_clustered, start_clustering=start_clustering, end_clustering=250000, tb=tb)
+    clustered_smapler = ClusteredSampler(train_set_normal, tb=tb)
     train_dl, eval_dl, test_dl = utils.create_data_loaders([train_set_clustered, eval_set, test_set],
-                                                           [clustered_smapler, RegularSampler(eval_set), RegularSampler(test_set)])
+                                                           [RegularSampler(train_set_clustered), RegularSampler(eval_set), RegularSampler(test_set)])
     train_dls.append(train_dl)
     eval_dls.append(eval_dl)
     test_dls.append(test_dl)
@@ -68,7 +68,7 @@ def main(exp_name="imagenet_one_eval_kmeans_decrease_by_1"):
                                    amsgrad=False)]
     trainer = Trainer(models=models, train_dls=train_dls, eval_dls=eval_dls, test_dls=test_dls,
                       loss_fn=nn.CrossEntropyLoss(), loss_fn_eval=nn.CrossEntropyLoss(reduction="none"),
-                      optimizers=optimizers, num_steps=300000, tb=tb,load=False)
+                      optimizers=optimizers, num_steps=300000, tb=tb,load=False,clustered_sampler=clustered_smapler,start_clustering=start_clustering)
     trainer.train_models()
 
 

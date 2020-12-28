@@ -17,7 +17,7 @@ from clustered_Sampler import RegularSampler
 
 
 class Trainer:
-    def __init__(self, models, train_dls, eval_dls, test_dls, loss_fn, loss_fn_eval, optimizers, num_steps, tb, load):
+    def __init__(self, models, train_dls, eval_dls, test_dls, loss_fn, loss_fn_eval, optimizers, num_steps, tb, load,clustered_sampler,start_clustering):
         self.models = models
         self.train_dls = train_dls
         self.eval_dls = eval_dls
@@ -36,6 +36,8 @@ class Trainer:
         self.bar = progressbar.ProgressBar(max_value=progressbar.UnknownLength)
         self.last_bar_update = 0
         self.load = load
+        self.start_clustering = start_clustering
+        self.clustered_sampler = clustered_sampler
 
         for phase in ["train", "eval", "test"]:
             self.times[phase] = [[] for _ in models]
@@ -56,8 +58,8 @@ class Trainer:
             'model_state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
         }, f"ckpt/model_{idx}.pth")
-        if idx == 0 and self.train_dls[idx].sampler.cluster_dict:
-            pickle.dump(self.train_dls[idx].sampler.cluster_dict, open("ckpt/cluster_dict.p", "wb"))
+        # if idx == 0 and self.cluster:
+        #     pickle.dump(self.train_dls[idx].sampler.cluster_dict, open("ckpt/cluster_dict.p", "wb"))
 
     def run_train(self, idx):
         model = self.models[idx]
@@ -108,8 +110,7 @@ class Trainer:
         epoch_loss = running_loss / num_examples
         epoch_acc = running_corrects.double() / num_examples
         self.save_ckpt(model=model, optimizer=optimizer, step=curr_step, idx=idx)
-        if self.last_bar_update < curr_step:
-            print(idx)
+        if self.last_bar_update < curr_step and idx == 0:
             self.bar.update(curr_step)
             self.last_bar_update = curr_step
         return time_elapsed, epoch_loss, epoch_acc, 0
@@ -117,10 +118,9 @@ class Trainer:
     def run_eval(self, idx):
         model = self.models[idx]
         curr_step = self.curr_steps[idx]
-
         model.eval()
         dl = self.eval_dls[idx]
-        if not self.train_dls[0].sampler.need_distrbition(curr_step):
+        if curr_step < self.start_clustering:
             return 0, 0, 0, 0
         running_loss = 0.0
         running_corrects = 0
@@ -155,18 +155,15 @@ class Trainer:
         time_elapsed = time.time() - since
         epoch_loss = running_loss / num_examples
         epoch_acc = running_corrects.double() / num_examples
-        if model.do_clustering() and self.train_dls[idx].sampler.start_clustering < curr_step:
-            if self.clusters is None:
-                self.clusters = model.get_clusters()
-            ret_value = self.train_dls[idx].sampler.create_distribiouns(self.clusters, eval_loss_dict, curr_step)
-            if ret_value == "done":
-                model.clustering_algorithm = None
-                new_ds = utils.DS_by_batch(
-                    data_root=os.path.join(os.path.dirname(os.getcwd()), "data", "data_clustering", "imagenet"),
-                    max_index=10)
-                self.train_dls[idx] = torch.utils.data.DataLoader(
-                    new_ds, batch_size=int(os.environ["batch_size"]), sampler=RegularSampler(new_ds),
-                    num_workers=0)
+        if model.do_clustering() and self.start_clustering < curr_step and self.clusters is None:
+            self.clusters = model.get_clusters()
+            self.train_dls[idx] = torch.utils.data.DataLoader(
+                self.clustered_sampler.ds, batch_size=int(os.environ["batch_size"]), sampler=self.clustered_sampler,
+                num_workers=0)
+            self.train_dls[idx].sampler.create_distribiouns(self.clusters, eval_loss_dict)
+
+            model.clustering_algorithm = None
+
         return time_elapsed, epoch_loss, epoch_acc, 0
 
     def run_test(self, idx):
