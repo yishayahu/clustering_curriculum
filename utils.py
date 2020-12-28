@@ -22,6 +22,7 @@ class Cifar10Ds(torch.utils.data.Dataset):
             self.ds = torch.utils.data.Subset(self.ds, range(40000, 50000))
         elif is_train and not is_eval and max_index == 4:
             self.ds = torch.utils.data.Subset(self.ds, range(40000))
+        self.batch_len = len(self.ds)
 
     def restart(self):
         self.collect_garbage()
@@ -144,8 +145,9 @@ def load_databatch(data_folder, idx, img_size=32, name="train"):
     if name == "train":
         mean_image = d['mean']
 
-    # x = x/np.float32(255)
-    # mean_image = mean_image/np.float32(255)
+    x = x/np.float32(255)
+    if name == "train":
+        mean_image = mean_image/np.float32(255)
 
     # Labels are indexed from 1, shift it so that indexes start at 0
     y = [i - 1 for i in y]

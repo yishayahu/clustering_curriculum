@@ -70,7 +70,10 @@ class ClusteredSampler(torch.utils.data.Sampler):
         for idx in indexes:
             img, label = self.ds[idx]
             if self.do_dist and self.cluster_dict:
-                hashed = get_md5sum(img.tobytes())
+                if os.environ["use_imagenet"] == "True":
+                    hashed = get_md5sum(img.tobytes())
+                else:
+                    hashed = get_md5sum(img.cpu().numpy().tobytes())
                 # if str(hashed) not in self.cluster_dict:
                 #     yield idx
                 #     continue

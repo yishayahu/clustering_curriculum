@@ -19,7 +19,8 @@ def main(exp_name="imagenet_one_eval_kmeans_decrease_by_1"):
     my_computer = "False"
     print(torch.cuda.get_device_name(0))
     os.environ["my_computer"] = my_computer
-    os.environ["batch_size"] = "512"
+    os.environ["batch_size"] = "1024"
+    os.environ["use_imagenet"] = str(use_imagenet)
 
     if str(my_computer) == "False":
         os.environ["n_cluster"] = "500" if use_imagenet else "50"  # todo: change back
@@ -44,7 +45,13 @@ def main(exp_name="imagenet_one_eval_kmeans_decrease_by_1"):
         train_set_clustered, eval_set = utils.Cifar10Ds(data_root=os.path.join(os.path.dirname(os.getcwd()),"data","data_clustering"),max_index=4),utils.Cifar10Ds(data_root=os.path.join(os.path.dirname(os.getcwd()),"data","data_clustering"),is_eval= True,is_train=False)
     tb = utils.Tb(exp_name=exp_name)
     print("clustreee")
-    clustered_smapler = ClusteredSampler(train_set_clustered, start_clustering=10000 if str(my_computer) == "False" else 15, end_clustering=250000, tb=tb)
+    if str(my_computer) == "True":
+        start_clustering = 15
+    elif use_imagenet:
+        start_clustering = 10000
+    else:
+        start_clustering = 2500
+    clustered_smapler = ClusteredSampler(train_set_clustered, start_clustering=start_clustering, end_clustering=250000, tb=tb)
     train_dl, eval_dl, test_dl = utils.create_data_loaders([train_set_clustered, eval_set, test_set],
                                                            [clustered_smapler, RegularSampler(eval_set), RegularSampler(test_set)])
     train_dls.append(train_dl)
