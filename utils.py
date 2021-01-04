@@ -8,6 +8,15 @@ import torchvision
 import random
 import torchvision.transforms as tvtf
 import gc
+transforms = tvtf.Compose([tvtf.CenterCrop(10),
+                           tvtf.RandomCrop(8),
+                           tvtf.RandomHorizontalFlip(p=0.5),
+                           tvtf.RandomVerticalFlip(p=0.5),
+                           tvtf.RandomRotation(degrees=(-90,90)),
+                           tvtf.ColorJitter(brightness=0.5,contrast=0.5),
+                           tvtf.ToTensor(),
+                           tvtf.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+                           ])
 
 
 class Cifar10Ds(torch.utils.data.Dataset):
@@ -15,7 +24,7 @@ class Cifar10Ds(torch.utils.data.Dataset):
 
         self.ds = torchvision.datasets.CIFAR10(
             root=data_root, download=False, train=is_train or is_eval,
-            transform=tvtf.ToTensor()  # Convert PIL image to pytorch Tensor
+            transform=transforms if (is_train or is_eval) else tvtf.ToTensor()  # Convert PIL image to pytorch Tensor
 
         )
         if is_eval and not is_train:
@@ -96,6 +105,7 @@ class DS_by_image(torch.utils.data.Dataset):
 
 def create_data_loaders(datasets, samplers):
     dls = []
+
     for idx in range(len(datasets)):
         if datasets[idx] != []:
             dl = torch.utils.data.DataLoader(

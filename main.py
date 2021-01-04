@@ -16,13 +16,11 @@ from trainer import Trainer
 import clustering_algorithms
 import numpy as np
 
-def main(exp_name="debug"):
+def main(exp_name="cifar_for_real_with_aug"):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
 
     print(torch.cuda.get_device_name(0))
-
-
     if str(my_computer) == "False":
         os.environ["n_cluster"] = "500" if use_imagenet else "50"
     else:

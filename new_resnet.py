@@ -237,9 +237,9 @@ class ResNet(nn.Module):
             assert len(keys) == len(labels)
             for k,l in zip(keys,labels):
                 self.cluster_dict[k] = int(l)
-            keys = None
-            arrays = None
-            labels = None
+            keys = None # do not erase
+            arrays = None # do not erase
+            labels = None # do not erase
             gc.collect()
         x = self.fc(x)
 

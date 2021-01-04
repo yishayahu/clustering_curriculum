@@ -82,7 +82,7 @@ class Trainer:
                                                                  state_dict=state_dict)  # todo: fix
         model.train()
         since = time.time()
-        epoch_viz = False
+        epoch_viz = True
         for inputs, labels in dl:
             if not epoch_viz:
                 temp_labels = [label_to_str[x.item()] for x in labels[:20]]
@@ -185,7 +185,7 @@ class Trainer:
         optimizer = self.optimizers[idx]
         num_examples = 0
         model.test_time_activate()
-        epoch_viz = False
+        epoch_viz = True
         for inputs, labels in dl:
             if inputs.shape[0] == 1:
                 print("skipped")
