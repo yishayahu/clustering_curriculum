@@ -82,11 +82,11 @@ class Trainer:
                                                                  state_dict=state_dict)  # todo: fix
         model.train()
         since = time.time()
-        epoch_viz = True
+        epoch_viz = False
         for (inputs,images_indexes), labels in dl:
             if not epoch_viz:
-                temp_labels = [label_to_str[x.item()] for x in labels[:20]]
-                self.tb.add_images(idx=idx,images=inputs[:20],title=f"train {temp_labels}",step=curr_step)
+                # temp_labels = [label_to_str[x.item()] for x in labels[:20]]
+                self.tb.add_images(idx=idx,images=inputs[:20],title=f"train",step=curr_step)
                 epoch_viz = True
             if inputs.shape[0] == 1:
                 print("skipped")
@@ -186,14 +186,14 @@ class Trainer:
         optimizer = self.optimizers[idx]
         num_examples = 0
         model.test_time_activate()
-        epoch_viz = True
+        epoch_viz = False
         for (inputs,image_indexes), labels in dl:
             if inputs.shape[0] == 1:
                 print("skipped")
                 continue
             if not epoch_viz:
-                temp_labels = [label_to_str[x.item()] for x in labels[:20]]
-                self.tb.add_images(idx=idx,images=inputs[:20],title=f"test {temp_labels}",step=curr_step)
+                # temp_labels = [label_to_str[x.item()] for x in labels[:20]]
+                self.tb.add_images(idx=idx,images=inputs[:20],title=f"test ",step=curr_step)
                 epoch_viz = True
 
             inputs = inputs.to(self.device)
