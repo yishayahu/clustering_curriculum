@@ -2,7 +2,7 @@ import os
 import torch
 import torchvision
 import torchvision.transforms as tvtf
-use_imagenet = False
+use_imagenet = True
 my_computer = "False"
 os.environ["my_computer"] = my_computer
 os.environ["batch_size"] = "1024"

@@ -59,8 +59,11 @@ class Trainer:
             'model_state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
         }, f"ckpt/model_{idx}.pth")
-        # if idx == 0 and self.cluster:
-        #     pickle.dump(self.train_dls[idx].sampler.cluster_dict, open("ckpt/cluster_dict.p", "wb"))
+        if idx == 0 and model.clustering_algorithm is not  None:
+            pkl_filename = "ckpt/cluster_model.pkl"
+            with open(pkl_filename, 'wb') as file:
+                pickle.dump(model.clustering_algorithm.model, file)
+
 
     def run_train(self, idx):
         model = self.models[idx]
