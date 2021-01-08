@@ -9,7 +9,7 @@ try:
     from torch.hub import load_state_dict_from_url
 except ImportError:
     from torch.utils.model_zoo import load_url as load_state_dict_from_url
-from utils import get_md5sum
+
 
 model_urls = {
     'resnet18': 'https://download.pytorch.org/models/resnet18-5c106cde.pth',
@@ -208,9 +208,9 @@ class ResNet(nn.Module):
         self.test_time = True
     def done_test(self):
         self.test_time = False
-    def _forward_impl(self, x):
+    def _forward_impl(self, x,image_indexes):
         # See note [TorchScript super()]
-        orig_x = x.cpu()
+        assert x.shape[0]  == len(image_indexes)
 
         x = self.conv1(x)
         x = self.bn1(x)
@@ -228,10 +228,9 @@ class ResNet(nn.Module):
         if self.clustering_algorithm is not None and not self.clustering_done and not self.test_time:
             keys = []
             arrays = []
-            for image_index in range(x.shape[0]):
-                hashed = get_md5sum(orig_x[image_index].numpy().tobytes())
-                keys.append(str(hashed))
-                arrays.append(x[image_index].cpu().detach().numpy().astype(np.int16))
+            for i,image_index in enumerate(image_indexes):
+                keys.append(image_index)
+                arrays.append(x[i].cpu().detach().numpy().astype(np.int16))
             self.clustering_algorithm.partial_fit(arrays)
             labels = self.clustering_algorithm.predict(arrays)
             assert len(keys) == len(labels)
@@ -245,8 +244,8 @@ class ResNet(nn.Module):
 
         return x
 
-    def forward(self, x):
-        return self._forward_impl(x)
+    def forward(self, x,img_indexes):
+        return self._forward_impl(x,img_indexes)
 
     def get_clusters(self):
         if not self.clustering_algorithm:

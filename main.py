@@ -2,7 +2,7 @@ import os
 import torch
 import torchvision
 import torchvision.transforms as tvtf
-use_imagenet = True
+use_imagenet = False
 my_computer = "False"
 os.environ["my_computer"] = my_computer
 os.environ["batch_size"] = "1024"
@@ -16,7 +16,7 @@ from trainer import Trainer
 import clustering_algorithms
 import numpy as np
 
-def main(exp_name="cifar_for_real_with_aug"):
+def main(exp_name="cifar_10_with_aug"):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
 

@@ -1,5 +1,5 @@
 import numpy as np
-from utils import get_md5sum
+
 
 
 class AbstractClusteringAlgorithm:
@@ -29,14 +29,8 @@ class KmeanSklearnByBatch(AbstractClusteringAlgorithm):
     def partial_fit(self,x: [np.ndarray]):
         self.model.partial_fit(x)
     def predict(self,X,cluster_dict=None,from_image = False):
-        to_pred = []
-        if from_image:
-            assert cluster_dict is not None
-            for x in X:
-                hashed = get_md5sum(x.cpu().numpy().tobytes())
-                to_pred.append(cluster_dict[str(hashed)].cpu().detach().numpy())
-        else:
-            to_pred = X
+
+        to_pred = X
         return self.model.predict(np.array(to_pred,dtype=np.double()))
 
 class KmeanSklearn(AbstractClusteringAlgorithm):
@@ -51,14 +45,8 @@ class KmeanSklearn(AbstractClusteringAlgorithm):
     def labels_(self):
         return self.model.labels_
     def predict(self,X,cluster_dict=None,from_image = False):
-        to_pred = []
-        if from_image:
-            assert cluster_dict is not None
-            for x in X:
-                hashed = get_md5sum(x.cpu().numpy().tobytes())
-                to_pred.append(cluster_dict[str(hashed)].cpu().detach().numpy())
-        else:
-            to_pred = X
+
+        to_pred = X
         return self.model.predict(np.array(to_pred,dtype=np.double()))
 
 

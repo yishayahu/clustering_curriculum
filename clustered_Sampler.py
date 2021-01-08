@@ -1,4 +1,4 @@
-from utils import get_md5sum
+
 import numpy as np
 import torch
 import random
@@ -60,13 +60,9 @@ class ClusteredSampler(torch.utils.data.Sampler):
         for i in range(self.n_cluster):
             diffs[i] = []
         for idx in indexes:
-            img, label = self.ds[idx]
+            (img,image_index), label = self.ds[idx]
             if self.center >= 0:
-                if os.environ["use_imagenet"] == "True":
-                    hashed = get_md5sum(img.tobytes())
-                else:
-                    hashed = get_md5sum(img.cpu().numpy().tobytes())
-                cluster = self.cluster_dict[str(hashed)]
+                cluster = self.cluster_dict[image_index]
                 assert cluster in curr_hiererchy
                 try:
                     if len(diffs[self.hiererchy.index(cluster)]) < 20:

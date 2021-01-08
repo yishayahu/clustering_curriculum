@@ -8,9 +8,7 @@ import torchvision
 import random
 import torchvision.transforms as tvtf
 import gc
-transforms = tvtf.Compose([tvtf.CenterCrop(10),
-                           tvtf.RandomCrop(8),
-                           tvtf.RandomHorizontalFlip(p=0.5),
+transforms = tvtf.Compose([tvtf.RandomHorizontalFlip(p=0.5),
                            tvtf.RandomVerticalFlip(p=0.5),
                            tvtf.RandomRotation(degrees=(-90,90)),
                            tvtf.ColorJitter(brightness=0.5,contrast=0.5),
@@ -27,7 +25,9 @@ class Cifar10Ds(torch.utils.data.Dataset):
             transform=transforms if (is_train or is_eval) else tvtf.ToTensor()  # Convert PIL image to pytorch Tensor
 
         )
+        self.base_index = 0
         if is_eval and not is_train:
+            self.base_index = 40000
             self.ds = torch.utils.data.Subset(self.ds, range(40000, 50000))
         elif is_train and not is_eval and max_index == 4:
             self.ds = torch.utils.data.Subset(self.ds, range(40000))
@@ -40,7 +40,8 @@ class Cifar10Ds(torch.utils.data.Dataset):
         gc.collect()
 
     def __getitem__(self, item):
-        return self.ds[item]
+        img,label = self.ds[item]
+        return (img,item+self.base_index),label
 
     def __len__(self):
         return len(self.ds)
@@ -81,26 +82,12 @@ class DS_by_batch(torch.utils.data.Dataset):
             self.curr_batch = load_databatch(data_folder=self.data_root,
                                              idx=self.curr_batch_idx if not self.is_eval else 10,
                                              name="train" if (self.is_train or self.is_eval) else "val")
-        return self.curr_batch["X_train"][item], self.curr_batch["Y_train"][item]
+        return (self.curr_batch["X_train"][item],item+((self.curr_batch_idx-1)*self.batch_len)), self.curr_batch["Y_train"][item]
 
     def __len__(self):
         assert False
         return self.batch_len
 
-
-class DS_by_image(torch.utils.data.Dataset):
-    def __init__(self, data_root):
-        self.data_root = data_root
-        self.data_len = len(os.listdir(data_root)) - 1
-        self.labels = torch.load(os.path.join(data_root, "labels.pt"))
-        assert self.data_len == len(self.labels)
-
-    def __getitem__(self, item):
-        im_path = os.path.join(self.data_root, f"image_{item}.pt")
-        return torch.load(im_path), self.labels[item]
-
-    def __len__(self):
-        return self.data_len
 
 
 def create_data_loaders(datasets, samplers):

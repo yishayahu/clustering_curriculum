@@ -11,7 +11,7 @@ import torchvision.transforms.functional as F
 
 import utils
 from label_to_str import label_to_str
-from utils import get_md5sum, Tb
+
 import numpy as np
 import progressbar
 from clustered_Sampler import RegularSampler
@@ -83,7 +83,7 @@ class Trainer:
         model.train()
         since = time.time()
         epoch_viz = True
-        for inputs, labels in dl:
+        for (inputs,images_indexes), labels in dl:
             if not epoch_viz:
                 temp_labels = [label_to_str[x.item()] for x in labels[:20]]
                 self.tb.add_images(idx=idx,images=inputs[:20],title=f"train {temp_labels}",step=curr_step)
@@ -91,6 +91,7 @@ class Trainer:
             if inputs.shape[0] == 1:
                 print("skipped")
                 continue
+
             inputs = inputs.to(self.device)
             labels = labels.to(self.device).long()
 
@@ -101,7 +102,7 @@ class Trainer:
             optimizer.zero_grad()
             model.zero_grad()
 
-            outputs = model(inputs)
+            outputs = model(inputs,images_indexes)
 
             loss = self.loss_fn(outputs, labels)
             _, preds = torch.max(outputs, 1)
@@ -134,7 +135,7 @@ class Trainer:
         eval_loss_dict = {}
         optimizer = self.optimizers[idx]
         num_examples = 0
-        for inputs, labels in dl:
+        for (inputs,images_indexes), labels in dl:
             if inputs.shape[0] == 1:
                 print("skipped")
                 continue
@@ -146,14 +147,14 @@ class Trainer:
             with torch.no_grad():
                 optimizer.zero_grad()
                 model.zero_grad()
-                outputs = model(inputs)
+                outputs = model(inputs,images_indexes)
                 loss = self.loss_fn(outputs, labels)
                 _, preds = torch.max(outputs, 1)
                 if model.do_clustering():
                     losses = self.loss_fn_eval(outputs, labels)
-                    for curr_input, temp_loss in zip(inputs, losses):
-                        hashed = get_md5sum(curr_input.cpu().numpy().tobytes())
-                        eval_loss_dict[str(hashed)] = temp_loss
+                    for curr_input,images_index, temp_loss in zip(inputs,images_indexes, losses):
+
+                        eval_loss_dict[images_index] = temp_loss
                 running_loss += loss.cpu().item() * inputs.size(0)
                 num_examples+= inputs.size(0)
                 running_corrects += torch.sum(preds == labels.data).cpu()
@@ -186,7 +187,7 @@ class Trainer:
         num_examples = 0
         model.test_time_activate()
         epoch_viz = True
-        for inputs, labels in dl:
+        for (inputs,image_indexes), labels in dl:
             if inputs.shape[0] == 1:
                 print("skipped")
                 continue
@@ -194,13 +195,14 @@ class Trainer:
                 temp_labels = [label_to_str[x.item()] for x in labels[:20]]
                 self.tb.add_images(idx=idx,images=inputs[:20],title=f"test {temp_labels}",step=curr_step)
                 epoch_viz = True
+
             inputs = inputs.to(self.device)
             labels = labels.to(self.device).long()
 
             with torch.no_grad():
                 optimizer.zero_grad()
                 model.zero_grad()
-                outputs = model(inputs)
+                outputs = model(inputs,image_indexes)
 
                 loss = self.loss_fn(outputs, labels)
                 _, preds = torch.max(outputs, 1)
