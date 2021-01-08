@@ -11,7 +11,7 @@ import gc
 transforms = tvtf.Compose([tvtf.RandomHorizontalFlip(p=0.5),
                            tvtf.RandomVerticalFlip(p=0.5),
                            tvtf.RandomRotation(degrees=(-90,90)),
-                           tvtf.ColorJitter(brightness=0.5,contrast=0.5),
+                           tvtf.ColorJitter(brightness=0.2,contrast=0.2),
                            tvtf.ToTensor(),
                            tvtf.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
                            ])
