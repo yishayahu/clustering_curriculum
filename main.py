@@ -1,4 +1,12 @@
 import os
+use_imagenet = True
+my_computer = "False"
+os.environ["my_computer"] = my_computer
+os.environ["batch_size"] = "1024"
+os.environ["use_imagenet"] = str(use_imagenet)
+
+
+
 import torch
 import torchvision
 import torchvision.transforms as tvtf
@@ -11,11 +19,7 @@ import clustering_algorithms
 import numpy as np
 
 
-use_imagenet = True
-my_computer = "False"
-os.environ["my_computer"] = my_computer
-os.environ["batch_size"] = "1024"
-os.environ["use_imagenet"] = str(use_imagenet)
+
 
 
 
