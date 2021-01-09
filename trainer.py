@@ -36,7 +36,18 @@ class Trainer:
         self.clusters = None
         self.bar = progressbar.ProgressBar(max_value=progressbar.UnknownLength)
         self.last_bar_update = 0
-        self.load = load
+        if load:
+            for i in [0,1]:
+                state_dict = torch.load(f"ckpt/model_{self.tb.exp_name}_{i}.pth")
+                self.models[i].load_state_dict(state_dict["model_state_dict"])
+                self.optimizers[i].load_state_dict(state_dict["optimizer_state_dict"])
+                self.curr_steps[i] = state_dict["step"]
+            pkl_filename = f"ckpt/{self.tb.exp_name}_cluster_model.pkl"
+            with open(pkl_filename, 'rb') as file:
+                self.models[0].clustering_algorithm.model = pickle.load(file)
+            pkl_filename = f"ckpt/{self.tb.exp_name}_resnet_cluster_dict.pkl"
+            with open(pkl_filename, 'rb') as file:
+                self.models[0].cluster_dict = pickle.load(file)
         self.start_clustering = start_clustering
         self.clustered_sampler = clustered_sampler
 
@@ -45,13 +56,7 @@ class Trainer:
             self.losses[phase] = [[] for _ in models]
             self.accuracies[phase] = [[] for _ in models]
             self.steps_for_acc_loss_and_time[phase] = [[] for _ in models]
-
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-    def load_ckpt(self, model, optimizer, state_dict):
-        model.load_state_dict(state_dict["model_state_dict"])
-        optimizer.load_state_dict(state_dict["optimizer_state_dict"])
-        return model, optimizer, state_dict["step"]
 
     def save_ckpt(self, model, optimizer, step, idx,exp_name):
         torch.save({
@@ -63,6 +68,11 @@ class Trainer:
             pkl_filename = f"ckpt/{exp_name}_cluster_model.pkl"
             with open(pkl_filename, 'wb') as file:
                 pickle.dump(model.clustering_algorithm.model, file)
+            pkl_filename = f"ckpt/{exp_name}_resnet_cluster_dict.pkl"
+            with open(pkl_filename, 'wb') as file:
+                pickle.dump(model.cluster_dict, file)
+        if idx == 1:
+            print("model saved")
 
 
     def run_train(self, idx):
@@ -75,14 +85,7 @@ class Trainer:
 
         optimizer = self.optimizers[idx]
         num_examples = 0
-        if self.load and curr_step == 0:
-            for ckpt in os.listdir("ckpt"):
-                _, ckpt_idx, _ = ckpt.split(".")[0].split("_")
-                if int(ckpt_idx) == idx:
-                    print(f"loading from {ckpt}")
-                    state_dict = torch.load(f"ckpt/{ckpt}")
-                    model, optimizer, curr_step = self.load_ckpt(model=model, optimizer=optimizer,
-                                                                 state_dict=state_dict)  # todo: fix
+
         model.train()
         since = time.time()
         epoch_viz = False
