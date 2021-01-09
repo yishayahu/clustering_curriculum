@@ -237,11 +237,7 @@ class Trainer:
         return time_elapsed, epoch_loss, epoch_acc, sub_epoch_acc
 
     def save_epoch_results(self, phase, idx, curr_time, loss, acc, sub_acc, step):
-        def save_results_to_json():
-            json.dump(self.times, open("times.json", 'w'))
-            json.dump(self.losses, open("losses.json", 'w'))
-            json.dump(self.accuracies, open("accuracies.json", 'w'))
-            json.dump(self.steps_for_acc_loss_and_time, open("steps.json", 'w'))
+
 
         def save_results_to_tb():
             self.tb.add_scalar(idx, phase + " loss", loss, step)
@@ -256,7 +252,6 @@ class Trainer:
         self.losses[phase][idx].append(loss)
         self.accuracies[phase][idx].append(acc.item())
         self.steps_for_acc_loss_and_time[phase][idx].append(self.curr_steps[idx])
-        save_results_to_json()
         save_results_to_tb()
         print_results()
 
