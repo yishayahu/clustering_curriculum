@@ -53,14 +53,14 @@ class Trainer:
         optimizer.load_state_dict(state_dict["optimizer_state_dict"])
         return model, optimizer, state_dict["step"]
 
-    def save_ckpt(self, model, optimizer, step, idx):
+    def save_ckpt(self, model, optimizer, step, idx,exp_name):
         torch.save({
             'step': step,
             'model_state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
-        }, f"ckpt/model_{idx}.pth")
+        }, f"ckpt/model_{exp_name}_{idx}.pth")
         if idx == 0 and model.clustering_algorithm is not  None:
-            pkl_filename = "ckpt/cluster_model.pkl"
+            pkl_filename = f"ckpt/{exp_name}_cluster_model.pkl"
             with open(pkl_filename, 'wb') as file:
                 pickle.dump(model.clustering_algorithm.model, file)
 
@@ -119,7 +119,7 @@ class Trainer:
         time_elapsed = time.time() - since
         epoch_loss = running_loss / num_examples
         epoch_acc = running_corrects.double() / num_examples
-        self.save_ckpt(model=model, optimizer=optimizer, step=curr_step, idx=idx)
+        self.save_ckpt(model=model, optimizer=optimizer, step=curr_step, idx=idx,exp_name=self.tb.exp_name)
         if self.last_bar_update < curr_step and idx == 0:
             self.bar.update(curr_step)
             self.last_bar_update = curr_step

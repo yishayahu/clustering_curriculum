@@ -115,6 +115,7 @@ class Tb:
     def __init__(self, exp_name):
         from torch.utils.tensorboard import SummaryWriter
         self.writers = [SummaryWriter(f'runs/{exp_name}_1'), SummaryWriter(f'runs/{exp_name}_2')]
+        self.exp_name = exp_name
 
     def add_images(self, idx, images, title, step):
         img_grid = torchvision.utils.make_grid(images)
