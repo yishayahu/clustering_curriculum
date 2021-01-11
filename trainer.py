@@ -36,6 +36,7 @@ class Trainer:
         self.clusters = None
         self.bar = progressbar.ProgressBar(max_value=progressbar.UnknownLength)
         self.last_bar_update = 0
+        self.last_save = 0
         if load:
             for i in [0, 1]:
                 state_dict = torch.load(f"ckpt/model_{self.tb.exp_name}_{i}.pth")
@@ -68,26 +69,29 @@ class Trainer:
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     def save_ckpt(self, model, optimizer, step, idx, exp_name):
-        torch.save({
-            'step': step,
-            'model_state_dict': model.state_dict(),
-            'optimizer_state_dict': optimizer.state_dict(),
-        }, f"ckpt/model_{exp_name}_{idx}.pth")
-        if idx == 0:
-            if model.clustering_algorithm is not None:
-                pkl_filename = f"ckpt/{exp_name}_cluster_model.pkl"
-                with open(pkl_filename, 'wb') as file:
-                    pickle.dump(model.clustering_algorithm.model, file)
-                pkl_filename = f"ckpt/{exp_name}_resnet_cluster_dict.pkl"
-                with open(pkl_filename, 'wb') as file:
-                    pickle.dump(model.cluster_dict, file)
-            else:
-                pkl_filename = f"ckpt/{exp_name}_sampler_cluster_dict.pkl"
-                with open(pkl_filename, 'wb') as file:
-                    pickle.dump(self.train_dls[idx].sampler.cluster_dict, file)
 
-        if idx == 1:
-            print("model saved")
+        if step - self.last_save > 1000:
+            self.last_save = step
+            torch.save({
+                'step': step,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+            }, f"ckpt/model_{exp_name}_{idx}.pth")
+            if idx == 0:
+                if model.clustering_algorithm is not None:
+                    pkl_filename = f"ckpt/{exp_name}_cluster_model.pkl"
+                    with open(pkl_filename, 'wb') as file:
+                        pickle.dump(model.clustering_algorithm.model, file)
+                    pkl_filename = f"ckpt/{exp_name}_resnet_cluster_dict.pkl"
+                    with open(pkl_filename, 'wb') as file:
+                        pickle.dump(model.cluster_dict, file)
+                else:
+                    pkl_filename = f"ckpt/{exp_name}_sampler_cluster_dict.pkl"
+                    with open(pkl_filename, 'wb') as file:
+                        pickle.dump(self.train_dls[idx].sampler.cluster_dict, file)
+
+            if idx == 1:
+                print("model saved")
 
     def run_train(self, idx):
         model = self.models[idx]
