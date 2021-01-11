@@ -229,7 +229,7 @@ class ResNet(nn.Module):
             keys = []
             arrays = []
             for i,image_index in enumerate(image_indexes):
-                keys.append(image_index)
+                keys.append(int(image_index))
                 arrays.append(x[i].cpu().detach().numpy().astype(np.int16))
             self.clustering_algorithm.partial_fit(arrays)
             labels = self.clustering_algorithm.predict(arrays)

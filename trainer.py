@@ -71,6 +71,7 @@ class Trainer:
     def save_ckpt(self, model, optimizer, step, idx, exp_name):
 
         if step - self.last_save > 1000:
+            print("start saving model")
             self.last_save = step
             torch.save({
                 'step': step,
@@ -89,7 +90,6 @@ class Trainer:
                     pkl_filename = f"ckpt/{exp_name}_sampler_cluster_dict.pkl"
                     with open(pkl_filename, 'wb') as file:
                         pickle.dump(self.train_dls[idx].sampler.cluster_dict, file)
-
             if idx == 1:
                 print("model saved")
 
@@ -140,7 +140,7 @@ class Trainer:
         time_elapsed = time.time() - since
         epoch_loss = running_loss / num_examples
         epoch_acc = running_corrects.double() / num_examples
-        self.save_ckpt(model=model, optimizer=optimizer, step=curr_step, idx=idx, exp_name=self.tb.exp_name)
+
         if self.last_bar_update < curr_step and idx == 0:
             self.bar.update(curr_step)
             self.last_bar_update = curr_step
@@ -294,3 +294,6 @@ class Trainer:
             self.test_dls[idx].dataset.collect_garbage()
             if (curr_time, loss, acc, sub_acc) != (0, 0, 0, 0):
                 self.save_epoch_results("test", idx, curr_time, loss, acc, sub_acc, self.curr_steps[idx])
+
+            self.save_ckpt(model=self.models[idx], optimizer=self.optimizers[idx], step=self.curr_steps[idx], idx=idx,
+                           exp_name=self.tb.exp_name)
