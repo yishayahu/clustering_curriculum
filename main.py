@@ -2,7 +2,7 @@ import os
 use_imagenet = True
 my_computer = "False"
 os.environ["my_computer"] = my_computer
-os.environ["batch_size"] = "1024"
+os.environ["batch_size"] = "512"
 os.environ["use_imagenet"] = str(use_imagenet)
 
 
@@ -88,13 +88,14 @@ def main(exp_name="cifar_10_with_aug"):
     train_dls.append(train_dl)
     eval_dls.append(eval_dl)
     test_dls.append(test_dl)
-    optimizers = [torch.optim.Adam(models[0].parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0,
-                                   amsgrad=False),
-                  torch.optim.Adam(models[1].parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0,
-                                   amsgrad=False)]
+    optimizer1 = torch.optim.SGD(models[0].parameters(), lr=0.001, momentum=0.9,nesterov=True, weight_decay=5e-4)
+    scheduler1 =torch.optim.lr_scheduler.CyclicLR(optimizer1, base_lr=0.00001, max_lr=0.01,step_size_up=5000,mode="triangular2")
+    optimizer2 = torch.optim.SGD(models[0].parameters(), lr=0.001, momentum=0.9,nesterov=True, weight_decay=5e-4)
+    scheduler2 =torch.optim.lr_scheduler.CyclicLR(optimizer2, base_lr=0.00001, max_lr=0.01,step_size_up=5000,mode="triangular2")
+
     trainer = Trainer(models=models, train_dls=train_dls, eval_dls=eval_dls, test_dls=test_dls,
                       loss_fn=nn.CrossEntropyLoss(), loss_fn_eval=nn.CrossEntropyLoss(reduction="none"),
-                      optimizers=optimizers, num_steps=300000, tb=tb, load=True, clustered_sampler=clustered_smapler,
+                      optimizers=[optimizer1,optimizer2],schedulers=[scheduler1,scheduler2], num_steps=300000, tb=tb, load=False, clustered_sampler=clustered_smapler,
                       start_clustering=start_clustering)
     trainer.train_models()
 

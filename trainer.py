@@ -17,7 +17,7 @@ from clustered_Sampler import RegularSampler
 
 
 class Trainer:
-    def __init__(self, models, train_dls, eval_dls, test_dls, loss_fn, loss_fn_eval, optimizers, num_steps, tb, load,
+    def __init__(self, models, train_dls, eval_dls, test_dls, loss_fn, loss_fn_eval, optimizers,schedulers, num_steps, tb, load,
                  clustered_sampler, start_clustering):
         self.models = models
         self.train_dls = train_dls
@@ -26,6 +26,7 @@ class Trainer:
         self.loss_fn = loss_fn
         self.loss_fn_eval = loss_fn_eval
         self.optimizers = optimizers
+        self.schedulers = schedulers
         self.num_steps = num_steps
         self.curr_steps = [0] * len(models)
         self.times = {}
@@ -44,6 +45,7 @@ class Trainer:
                 self.models[i].load_state_dict(state_dict["model_state_dict"])
                 self.optimizers[i].load_state_dict(state_dict["optimizer_state_dict"])
                 self.curr_steps[i] = state_dict["step"]
+                self.last_save[i] = state_dict["step"]
             if self.curr_steps[i] > start_clustering:
                 pkl_filename = f"ckpt/{self.tb.exp_name}_sampler_cluster_dict.pkl"
                 with open(pkl_filename, 'rb') as file:
@@ -60,6 +62,7 @@ class Trainer:
                 pkl_filename = f"ckpt/{self.tb.exp_name}_resnet_cluster_dict.pkl"
                 with open(pkl_filename, 'rb') as file:
                     self.models[0].cluster_dict = pickle.load(file)
+
             print(f"running from steps {self.curr_steps}")
         self.start_clustering = start_clustering
         self.clustered_sampler = clustered_sampler
@@ -136,6 +139,7 @@ class Trainer:
             curr_step += 1
             loss.backward()
             optimizer.step()
+            self.schedulers[idx].step()
             running_loss += loss.cpu().item() * inputs.size(0)
             num_examples += inputs.size(0)
             running_corrects += torch.sum(preds == labels.data).cpu()
@@ -147,7 +151,7 @@ class Trainer:
         if self.last_bar_update < curr_step and idx == 0:
             self.bar.update(curr_step)
             self.last_bar_update = curr_step
-        return time_elapsed, epoch_loss, epoch_acc, 0
+        return time_elapsed, epoch_loss, epoch_acc, 0,self.schedulers[idx].get_lr()
 
     def run_eval(self, idx):
         model = self.models[idx]
@@ -197,7 +201,7 @@ class Trainer:
 
             model.clustering_algorithm = None
 
-        return time_elapsed, epoch_loss, epoch_acc, 0
+        return time_elapsed, epoch_loss, epoch_acc, 0,None
 
     def run_test(self, idx):
         model = self.models[idx]
@@ -254,14 +258,15 @@ class Trainer:
         else:
             sub_epoch_acc = sub_running_corrects / sub_running_corrects_disc
 
-        return time_elapsed, epoch_loss, epoch_acc, sub_epoch_acc
+        return time_elapsed, epoch_loss, epoch_acc, sub_epoch_acc,None
 
-    def save_epoch_results(self, phase, idx, curr_time, loss, acc, sub_acc, step):
+    def save_epoch_results(self, phase, idx, curr_time, loss, acc, sub_acc,lr, step):
 
         def save_results_to_tb():
             self.tb.add_scalar(idx, phase + " loss", loss, step)
             self.tb.add_scalar(idx, phase + " curr_time", curr_time, step)
             self.tb.add_scalar(idx, phase + " acc", acc, step)
+            self.tb.add_scalar(idx, phase + " lr", lr, step)
             if sub_acc:
                 self.tb.add_scalar(idx, phase + " sub_acc", sub_acc, step)
 
@@ -282,21 +287,21 @@ class Trainer:
             idx = np.argmin(self.curr_steps)
             assert idx in [0, 1]  # todo: remove
 
-            curr_time, loss, acc, sub_acc = self.run_train(idx)
+            curr_time, loss, acc, sub_acc,curr_lr = self.run_train(idx)
             self.train_dls[idx].dataset.collect_garbage()
             if (curr_time, loss, acc, sub_acc) != (0, 0, 0, 0):
-                self.save_epoch_results("train", idx, curr_time, loss, acc, sub_acc, self.curr_steps[idx])
+                self.save_epoch_results("train", idx, curr_time, loss, acc, sub_acc,lr=curr_lr,step=self.curr_steps[idx])
             if self.models[idx].do_clustering():
 
-                curr_time, loss, acc, sub_acc = self.run_eval(idx)
+                curr_time, loss, acc, sub_acc,_ = self.run_eval(idx)
                 self.eval_dls[idx].dataset.collect_garbage()
                 if (curr_time, loss, acc, sub_acc) != (0, 0, 0, 0):
-                    self.save_epoch_results("eval", idx, curr_time, loss, acc, sub_acc, self.curr_steps[idx])
+                    self.save_epoch_results("eval", idx, curr_time, loss, acc, sub_acc, self.curr_steps[idx],lr=None)
 
-            curr_time, loss, acc, sub_acc = self.run_test(idx)
+            curr_time, loss, acc, sub_acc,_ = self.run_test(idx)
             self.test_dls[idx].dataset.collect_garbage()
             if (curr_time, loss, acc, sub_acc) != (0, 0, 0, 0):
-                self.save_epoch_results("test", idx, curr_time, loss, acc, sub_acc, self.curr_steps[idx])
+                self.save_epoch_results("test", idx, curr_time, loss, acc, sub_acc, self.curr_steps[idx],lr=None)
 
             self.save_ckpt(model=self.models[idx], optimizer=self.optimizers[idx], step=self.curr_steps[idx], idx=idx,
                            exp_name=self.tb.exp_name)

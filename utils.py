@@ -8,18 +8,18 @@ import torchvision
 import random
 import torchvision.transforms as tvtf
 import gc
-transforms = tvtf.Compose([tvtf.RandomHorizontalFlip(p=0.5),
-                           tvtf.RandomVerticalFlip(p=0.5),
-                           tvtf.RandomRotation(degrees=(-90,90)),
-                           tvtf.ColorJitter(brightness=0.2,contrast=0.2),
-                           tvtf.ToTensor(),
-                           tvtf.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-                           ])
+
 
 
 class Cifar10Ds(torch.utils.data.Dataset):
     def __init__(self, data_root, is_train=True, is_eval=False, max_index=5):
-
+        transforms = tvtf.Compose([tvtf.RandomHorizontalFlip(p=0.5),
+                                   tvtf.RandomVerticalFlip(p=0.5),
+                                   tvtf.RandomRotation(degrees=(-90,90)),
+                                   tvtf.ColorJitter(brightness=0.2,contrast=0.2),
+                                   tvtf.ToTensor(),
+                                   tvtf.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+                                   ])
         self.ds = torchvision.datasets.CIFAR10(
             root=data_root, download=False, train=is_train or is_eval,
             transform=transforms if (is_train or is_eval) else tvtf.ToTensor()  # Convert PIL image to pytorch Tensor
@@ -49,6 +49,13 @@ class Cifar10Ds(torch.utils.data.Dataset):
 
 class DS_by_batch(torch.utils.data.Dataset):
     def __init__(self, data_root, is_train=True, is_eval=False, max_index=10):
+        _MEAN = [0.485, 0.456, 0.406]
+        _STD = [0.229, 0.224, 0.225]
+        self.transforms = tvtf.Compose([tvtf.RandomCrop(52),
+                                   tvtf.RandomVerticalFlip(p=0.25),
+                                   tvtf.RandomRotation(degrees=(-90,90)),
+                                   tvtf.RandomHorizontalFlip(p=0.25)])
+        self.normalize = tvtf.Normalize(_MEAN, _STD)
         self.data_root = data_root
 
         self.data_len = 1281167  # todo:remove constant max(os.listdir(data_root), key=lambda x: int(x.split("_")[1].split(".")[0]))
@@ -86,7 +93,11 @@ class DS_by_batch(torch.utils.data.Dataset):
             self.curr_batch = load_databatch(data_folder=self.data_root,
                                              idx=self.curr_batch_idx,
                                              name="train" if (self.is_train or self.is_eval) else "val")
-        return (self.curr_batch["X_train"][item],item+((self.curr_batch_idx-1)*self.batch_len)), self.curr_batch["Y_train"][item]
+        img = self.curr_batch["X_train"][item]
+        if self.is_train or self.is_eval:
+            img = self.transforms(img)
+        img = self.normalize(img)
+        return (img,item+((self.curr_batch_idx-1)*self.batch_len)), self.curr_batch["Y_train"][item]
 
     def __len__(self):
         assert False
@@ -135,7 +146,7 @@ def unpickle(file):
     return dict
 
 
-def load_databatch(data_folder, idx, img_size=32, name="train"):
+def load_databatch(data_folder, idx, img_size=64, name="train"):
     if name == "train":
         data_file = os.path.join(data_folder, 'train_data_batch_')
         d = unpickle(data_file + str(idx))
@@ -171,5 +182,5 @@ def load_databatch(data_folder, idx, img_size=32, name="train"):
     # Y_train = np.concatenate((Y_train, Y_train_flip), axis=0)
 
     return dict(
-        X_train=X_train,
+        X_train=torch.Tensor(X_train),
         Y_train=Y_train)
