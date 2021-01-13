@@ -69,7 +69,7 @@ def main(exp_name="cifar_10_with_aug"):
     tb = utils.Tb(exp_name=exp_name)
     print("clustreee")
     if str(my_computer) == "True":
-        start_clustering = 15
+        start_clustering = 6
     elif use_imagenet:
         start_clustering = 10000
     else:

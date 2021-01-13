@@ -180,7 +180,7 @@ class Trainer:
                 if model.do_clustering():
                     losses = self.loss_fn_eval(outputs, labels)
                     for curr_input, images_index, temp_loss in zip(inputs, images_indexes, losses):
-                        eval_loss_dict[images_index] = temp_loss
+                        eval_loss_dict[int(images_index)] = temp_loss
                 running_loss += loss.cpu().item() * inputs.size(0)
                 num_examples += inputs.size(0)
                 running_corrects += torch.sum(preds == labels.data).cpu()
@@ -188,7 +188,7 @@ class Trainer:
         time_elapsed = time.time() - since
         epoch_loss = running_loss / num_examples
         epoch_acc = running_corrects.double() / num_examples
-        if model.do_clustering() and self.start_clustering < curr_step and self.clusters is None:
+        if model.do_clustering() and self.start_clustering <= curr_step and self.clusters is None:
             self.clusters = model.get_clusters()
             self.train_dls[idx] = torch.utils.data.DataLoader(
                 self.clustered_sampler.ds, batch_size=int(os.environ["batch_size"]), sampler=self.clustered_sampler,
