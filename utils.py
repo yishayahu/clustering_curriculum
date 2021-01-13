@@ -52,8 +52,10 @@ class DS_by_batch(torch.utils.data.Dataset):
         self.data_root = data_root
 
         self.data_len = 1281167  # todo:remove constant max(os.listdir(data_root), key=lambda x: int(x.split("_")[1].split(".")[0]))
+        self.is_eval = is_eval
         self.curr_batch_idx = 1
         if is_eval:
+            self.curr_batch_idx = 10
             assert not is_train
         if is_train:
             assert not is_eval
@@ -64,13 +66,15 @@ class DS_by_batch(torch.utils.data.Dataset):
         if not is_train and not is_eval:
             self.batch_len = 50000 if os.environ["my_computer"] == "False" else (512 * 5)
         self.is_train = is_train
-        self.is_eval = is_eval
         self.max_index = max_index if os.environ["my_computer"] == "False" else 1
 
     def restart(self):
-        self.curr_batch_idx += 1
-        if self.curr_batch_idx > self.max_index:
-            self.curr_batch_idx = 1
+        if self.is_train:
+            self.curr_batch_idx += 1
+            if self.curr_batch_idx > self.max_index:
+                self.curr_batch_idx = 1
+        elif self.is_eval:
+            self.curr_batch_idx = 10
         self.collect_garbage()
 
     def collect_garbage(self):
@@ -80,7 +84,7 @@ class DS_by_batch(torch.utils.data.Dataset):
     def __getitem__(self, item):
         if self.curr_batch is None:
             self.curr_batch = load_databatch(data_folder=self.data_root,
-                                             idx=self.curr_batch_idx if not self.is_eval else 10,
+                                             idx=self.curr_batch_idx,
                                              name="train" if (self.is_train or self.is_eval) else "val")
         return (self.curr_batch["X_train"][item],item+((self.curr_batch_idx-1)*self.batch_len)), self.curr_batch["Y_train"][item]
 

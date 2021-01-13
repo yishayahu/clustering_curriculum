@@ -38,6 +38,7 @@ class Trainer:
         self.last_bar_update = 0
         self.last_save = [0,0]
         if load:
+            print("loding from ckpt")
             for i in [0, 1]:
                 state_dict = torch.load(f"ckpt/model_{self.tb.exp_name}_{i}.pth")
                 self.models[i].load_state_dict(state_dict["model_state_dict"])
@@ -52,12 +53,14 @@ class Trainer:
                     num_workers=0)
                 self.models[0].clustering_algorithm = None
             else:
+                print("loading before start clustering")
                 pkl_filename = f"ckpt/{self.tb.exp_name}_cluster_model.pkl"
                 with open(pkl_filename, 'rb') as file:
                     self.models[0].clustering_algorithm.model = pickle.load(file)
                 pkl_filename = f"ckpt/{self.tb.exp_name}_resnet_cluster_dict.pkl"
                 with open(pkl_filename, 'rb') as file:
                     self.models[0].cluster_dict = pickle.load(file)
+            print(f"running from steps {self.curr_steps}")
         self.start_clustering = start_clustering
         self.clustered_sampler = clustered_sampler
 
