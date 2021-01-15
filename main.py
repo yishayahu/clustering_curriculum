@@ -1,7 +1,7 @@
 import os
 my_computer = "False"
 os.environ["my_computer"] = my_computer
-os.environ["batch_size"] = "256" if my_computer == "False" else "52"
+os.environ["batch_size"] = "256" if my_computer == "False" else "26"
 os.environ["dataset_name"] = "tiny_imagenet"
 network_to_use = "DenseNet"
 # network_to_use = "ResNet50"
@@ -26,7 +26,7 @@ import numpy as np
 
 
 
-def main(exp_name="cifar_10_with_aug"):
+def main(exp_name="debug"):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
 
@@ -56,7 +56,7 @@ def main(exp_name="cifar_10_with_aug"):
             n_clusters=int(os.environ['n_cluster']))),DenseNet(200)]
         optimizer1 = torch.optim.RMSprop(models[0].parameters(), lr=0.0001, eps=1e-08)
         scheduler1 =torch.optim.lr_scheduler.CyclicLR(optimizer1, base_lr=0.0001, max_lr=0.0006,step_size_up=4686,mode="triangular2")
-        optimizer2 = torch.optim.RMSprop(models[0].parameters(), lr=0.0001, eps=1e-08)
+        optimizer2 = torch.optim.RMSprop(models[1].parameters(), lr=0.0001, eps=1e-08)
         scheduler2 =torch.optim.lr_scheduler.CyclicLR(optimizer1, base_lr=0.0001, max_lr=0.0006,step_size_up=4686,mode="triangular2")
     elif network_to_use == "ResNet50":
         models = [resnet50(num_classes=n_classes,
@@ -66,7 +66,7 @@ def main(exp_name="cifar_10_with_aug"):
                   resnet50(num_classes=n_classes, pretrained=False)]
         optimizer1 = torch.optim.SGD(models[0].parameters(), lr=0.001, momentum=0.9,nesterov=True, weight_decay=5e-4)
         scheduler1 =torch.optim.lr_scheduler.CyclicLR(optimizer1, base_lr=0.00001, max_lr=0.01,step_size_up=5000,mode="triangular2")
-        optimizer2 = torch.optim.SGD(models[0].parameters(), lr=0.001, momentum=0.9,nesterov=True, weight_decay=5e-4)
+        optimizer2 = torch.optim.SGD(models[1].parameters(), lr=0.001, momentum=0.9,nesterov=True, weight_decay=5e-4)
         scheduler2 =torch.optim.lr_scheduler.CyclicLR(optimizer2, base_lr=0.00001, max_lr=0.01,step_size_up=5000,mode="triangular2")
     else:
         models = []

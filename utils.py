@@ -8,7 +8,7 @@ import torchvision
 import random
 import torchvision.transforms as tvtf
 import gc
-
+from augmentor import MyAugmentor
 
 class Cifar10Ds(torch.utils.data.Dataset):
     def __init__(self, data_root, is_train=True, is_eval=False, max_index=5):
@@ -17,7 +17,6 @@ class Cifar10Ds(torch.utils.data.Dataset):
                                    tvtf.RandomRotation(degrees=(-90, 90)),
                                    tvtf.ColorJitter(brightness=0.2, contrast=0.2),
                                    tvtf.ToTensor(),
-                                   tvtf.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
                                    ])
         self.ds = torchvision.datasets.CIFAR10(
             root=data_root, download=False, train=is_train or is_eval,
@@ -48,18 +47,10 @@ class Cifar10Ds(torch.utils.data.Dataset):
 
 class TinyInDs(torch.utils.data.Dataset):
     def __init__(self, data_root, is_train=True, is_eval=False, max_index=5):
-        _MEAN = [0.485, 0.456, 0.406]
-        _STD = [0.229, 0.224, 0.225]
-        transforms = tvtf.Compose([tvtf.RandomHorizontalFlip(p=0.5),
-                                   tvtf.RandomVerticalFlip(p=0.2),
-                                   tvtf.GaussianBlur((21,21)),
-                                   tvtf.RandomAffine(scale=(0.8,1.5),degrees=(-45,45),translate=(0,0.2)),
-                                   tvtf.RandomCrop(50),
-                                   tvtf.ToTensor(),
-                                   tvtf.Normalize(_MEAN, _STD),
-                                   ])
 
+        self.aug = None
         if is_train or is_eval:
+            transforms = tvtf.Compose([MyAugmentor(),tvtf.ToTensor()])
             data_root = os.path.join(data_root, "train")
             if is_train:
 
@@ -73,10 +64,11 @@ class TinyInDs(torch.utils.data.Dataset):
                     return int(path1.split("_")[-1].split(".")[0]) >= max_index
         else:
             data_root = os.path.join(data_root, "new_val")
+            transforms = tvtf.Compose([tvtf.ToTensor()])
             def is_valid_file(path1):
                 return True
         self.ds = torchvision.datasets.ImageFolder(root=data_root, is_valid_file=is_valid_file,transform=transforms)
-        self.batch_len  = len(self.ds) if os.environ["my_computer"] == "False" else (int(os.environ["batch_size"]) *5)
+        self.batch_len  = len(self.ds) if os.environ["my_computer"] == "False" else (int(os.environ["batch_size"]) * 5)
     def __getitem__(self, item):
         img,label = self.ds[item]
         assert 0<=label<200
@@ -136,6 +128,7 @@ class DS_by_batch(torch.utils.data.Dataset):
         img = self.curr_batch["X_train"][item]
         if self.is_train or self.is_eval:
             img = self.transforms(img)
+        raise Exception("check normalize")
         img = self.normalize(img)
         return (img, item + ((self.curr_batch_idx - 1) * self.batch_len)), self.curr_batch["Y_train"][item]
 
