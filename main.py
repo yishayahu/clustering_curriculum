@@ -18,14 +18,7 @@ from new_resnet import *
 from new_densenet import DenseNet
 from trainer import Trainer
 import clustering_algorithms
-
 import numpy as np
-
-
-
-
-
-
 def main(exp_name="debug"):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
@@ -43,6 +36,7 @@ def main(exp_name="debug"):
     else:
         os.environ["n_cluster"] = "10"
     print(f"n clustrs is {os.environ['n_cluster']}")
+    print(f"batch size is {os.environ['batch_size']}")
     n_classes = None
     if os.environ["dataset_name"] == "imagenet":
         n_classes = 1000
