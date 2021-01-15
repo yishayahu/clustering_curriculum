@@ -1,4 +1,5 @@
 import gc
+import os
 
 from torch import nn
 import torch.nn.functional as F
@@ -9,7 +10,7 @@ class DenseNetBlock(nn.Module):
     def __init__(self,in_channels,out_channels,n_layers):
         super(DenseNetBlock, self).__init__()
         self._layers = nn.ModuleList()
-        self.n_layers  =n_layers
+        self.n_layers = n_layers
         for i in range(n_layers):
             if i ==0:
                 conv = nn.Conv2d(in_channels=in_channels,out_channels=out_channels,kernel_size=(3,3),padding=1)
@@ -63,6 +64,7 @@ class DenseNet(nn.Module):
 
     def forward(self, x: Tensor,image_indexes) -> Tensor:
         out = x
+        os.system("nvidia-smi")
         for block,bn in zip(self.blocks,self.bns):
             skip = out
             out = block(out)
