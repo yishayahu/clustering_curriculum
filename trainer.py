@@ -282,6 +282,7 @@ class Trainer:
         print_results()
 
     def train_models(self):
+        print("start trining")
         while True:
             if min(self.curr_steps) > self.num_steps:
                 break
