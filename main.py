@@ -97,15 +97,16 @@ def main(exp_name="debug"):
             data_root=os.path.join(os.path.dirname(os.getcwd()), "data", "data_clustering"), is_eval=True,
             is_train=False)
     elif os.environ["dataset_name"] == "tiny_imagenet":
+        data_root = "/content/tiny-imagenet-200" if my_computer == "False" else os.path.join(os.path.dirname(os.getcwd()), "data", "data_clustering","tiny-imagenet-200")
         train_set_normal, test_set = utils.TinyInDs(
-            data_root=os.path.join(os.path.dirname(os.getcwd()), "tiny-imagenet-200"),
+            data_root=data_root,
             max_index=500), utils.TinyInDs(
-            data_root=os.path.join(os.path.dirname(os.getcwd()),"tiny-imagenet-200"), is_train=False,
+            data_root=data_root, is_train=False,
             is_eval=False)
         train_set_clustered, eval_set = utils.TinyInDs(
-            data_root=os.path.join(os.path.dirname(os.getcwd()),"tiny-imagenet-200"),
+            data_root=data_root,
             max_index=400), utils.TinyInDs(
-            data_root=os.path.join(os.path.dirname(os.getcwd()),"tiny-imagenet-200"), is_eval=True,
+            data_root=data_root, is_eval=True,
             is_train=False,max_index=400)
     else:
         raise Exception("1")
