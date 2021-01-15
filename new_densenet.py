@@ -41,7 +41,6 @@ class DenseNet(nn.Module):
         self.bns.append(nn.BatchNorm2d(928))
 
         self.last_conv = nn.Conv2d(928,n_classes,kernel_size=(1,1))
-        self.softmax = nn.Softmax(-1)
         self.relu = nn.ReLU()
         self.maxpool2d = nn.MaxPool2d(kernel_size=2)
 
@@ -93,6 +92,5 @@ class DenseNet(nn.Module):
             gc.collect()
         out = self.last_conv(out)
         out = F.adaptive_avg_pool2d(out,(1,1)).squeeze()
-        out = self.softmax(out)
         return out
 

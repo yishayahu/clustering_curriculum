@@ -69,6 +69,8 @@ def main(exp_name="debug"):
     for model_idx, model in enumerate(models):
         print(f"copy model {model_idx} to device")
         print(model)
+        print(f"model {model_idx} total param is {sum(p.numel() for p in model.parameters())}")
+        print(f"model {model_idx} traineble param is {sum(p.numel() for p in model.parameters() if p.requires_grad)}")
         model.to(device=device)
         print(os.popen('nvidia-smi').read())
     train_dls, eval_dls, test_dls = [], [], []
