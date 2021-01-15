@@ -54,12 +54,20 @@ def main(exp_name="cifar_10_with_aug"):
     if network_to_use == "DenseNet":
         models = [DenseNet(200,clustering_algorithm=clustering_algorithms.KmeanSklearnByBatch(
             n_clusters=int(os.environ['n_cluster']))),DenseNet(200)]
+        optimizer1 = torch.optim.RMSprop(models[0].parameters(), lr=0.0001, eps=1e-08)
+        scheduler1 =torch.optim.lr_scheduler.CyclicLR(optimizer1, base_lr=0.0001, max_lr=0.0006,step_size_up=4686,mode="triangular2")
+        optimizer2 = torch.optim.RMSprop(models[0].parameters(), lr=0.0001, eps=1e-08)
+        scheduler2 =torch.optim.lr_scheduler.CyclicLR(optimizer1, base_lr=0.0001, max_lr=0.0006,step_size_up=4686,mode="triangular2")
     elif network_to_use == "ResNet50":
         models = [resnet50(num_classes=n_classes,
                            clustering_algorithm=clustering_algorithms.KmeanSklearnByBatch(
                                n_clusters=int(os.environ['n_cluster'])),
                            pretrained=False),
                   resnet50(num_classes=n_classes, pretrained=False)]
+        optimizer1 = torch.optim.SGD(models[0].parameters(), lr=0.001, momentum=0.9,nesterov=True, weight_decay=5e-4)
+        scheduler1 =torch.optim.lr_scheduler.CyclicLR(optimizer1, base_lr=0.00001, max_lr=0.01,step_size_up=5000,mode="triangular2")
+        optimizer2 = torch.optim.SGD(models[0].parameters(), lr=0.001, momentum=0.9,nesterov=True, weight_decay=5e-4)
+        scheduler2 =torch.optim.lr_scheduler.CyclicLR(optimizer2, base_lr=0.00001, max_lr=0.01,step_size_up=5000,mode="triangular2")
     else:
         models = []
     for model in models:
@@ -128,10 +136,7 @@ def main(exp_name="cifar_10_with_aug"):
     train_dls.append(train_dl)
     eval_dls.append(eval_dl)
     test_dls.append(test_dl)
-    optimizer1 = torch.optim.SGD(models[0].parameters(), lr=0.001, momentum=0.9,nesterov=True, weight_decay=5e-4)
-    scheduler1 =torch.optim.lr_scheduler.CyclicLR(optimizer1, base_lr=0.00001, max_lr=0.01,step_size_up=5000,mode="triangular2")
-    optimizer2 = torch.optim.SGD(models[0].parameters(), lr=0.001, momentum=0.9,nesterov=True, weight_decay=5e-4)
-    scheduler2 =torch.optim.lr_scheduler.CyclicLR(optimizer2, base_lr=0.00001, max_lr=0.01,step_size_up=5000,mode="triangular2")
+
 
     trainer = Trainer(models=models, train_dls=train_dls, eval_dls=eval_dls, test_dls=test_dls,
                       loss_fn=nn.CrossEntropyLoss(), loss_fn_eval=nn.CrossEntropyLoss(reduction="none"),
