@@ -46,7 +46,7 @@ class Cifar10Ds(torch.utils.data.Dataset):
 
 
 class TinyInDs(torch.utils.data.Dataset):
-    def __init__(self, data_root, is_train=True, is_eval=False, max_index=5):
+    def __init__(self, data_root, is_train=True, is_eval=False, max_index=500):
 
         self.aug = None
         if is_train or is_eval:

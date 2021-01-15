@@ -46,8 +46,9 @@ def main(exp_name="debug"):
         n_classes = 200
 
     if network_to_use == "DenseNet":
-        models = [DenseNet(200,clustering_algorithm=clustering_algorithms.KmeanSklearnByBatch(
-            n_clusters=int(os.environ['n_cluster']))),DenseNet(200)]
+        # models = [DenseNet(200,clustering_algorithm=clustering_algorithms.KmeanSklearnByBatch(
+        #     n_clusters=int(os.environ['n_cluster']))),DenseNet(200)]
+        models = [DenseNet(200),resnet50(num_classes=200,pretrained=False)]
         optimizer1 = torch.optim.RMSprop(models[0].parameters(), lr=0.0001, eps=1e-08)
         scheduler1 =torch.optim.lr_scheduler.CyclicLR(optimizer1, base_lr=0.0001, max_lr=0.0006,step_size_up=4686,mode="triangular2")
         optimizer2 = torch.optim.RMSprop(models[1].parameters(), lr=0.0001, eps=1e-08)
@@ -67,6 +68,7 @@ def main(exp_name="debug"):
 
     for model_idx, model in enumerate(models):
         print(f"copy model {model_idx} to device")
+        print(model)
         model.to(device=device)
         print(os.popen('nvidia-smi').read())
     train_dls, eval_dls, test_dls = [], [], []
