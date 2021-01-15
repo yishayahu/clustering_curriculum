@@ -1,7 +1,7 @@
 import os
 my_computer = "False"
 os.environ["my_computer"] = my_computer
-os.environ["batch_size"] = "128" if my_computer == "False" else "26"
+os.environ["batch_size"] = "256" if my_computer == "False" else "26"
 os.environ["dataset_name"] = "tiny_imagenet"
 network_to_use = "DenseNet"
 # network_to_use = "ResNet50"
@@ -64,8 +64,11 @@ def main(exp_name="debug"):
         scheduler2 =torch.optim.lr_scheduler.CyclicLR(optimizer2, base_lr=0.00001, max_lr=0.01,step_size_up=5000,mode="triangular2")
     else:
         models = []
-    for model in models:
+
+    for model_idx, model in enumerate(models):
+        print(f"copy model {model_idx} to device")
         model.to(device=device)
+        print(os.popen('nvidia-smi').read())
     train_dls, eval_dls, test_dls = [], [], []
     # create cluster resnet data
 

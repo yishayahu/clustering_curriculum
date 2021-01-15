@@ -71,6 +71,8 @@ class DenseNet(nn.Module):
             if block.n_layers == 1:
                 continue
             out = torch.cat([skip,out],dim=1)
+            skip = None
+            gc.collect()
             out = bn(out)
             out = self.relu(out)
             out = self.maxpool2d(out)
@@ -79,7 +81,7 @@ class DenseNet(nn.Module):
             arrays = []
             for i,image_index in enumerate(image_indexes):
                 keys.append(int(image_index))
-                arrays.append(out[i].flatten().cpu().detach().numpy().astype(np.int16))
+                arrays.append(out[i].cpu().detach().flatten().numpy().astype(np.int16))
             self.clustering_algorithm.partial_fit(arrays)
             labels = self.clustering_algorithm.predict(arrays)
             assert len(keys) == len(labels)
