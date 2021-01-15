@@ -114,10 +114,7 @@ class Trainer:
         model.train()
         since = time.time()
         epoch_viz = False
-        print(f"training from step {curr_step}")
-        start_data_time = time.time()
         for (inputs, images_indexes), labels in tqdm(dl,desc=str(curr_step)):
-            print(f"data time is {time.time()-start_data_time}")
             if not epoch_viz:
                 # temp_labels = [label_to_str[x.item()] for x in labels[:20]]
                 self.tb.add_images(idx=idx, images=inputs[:20], title=f"train", step=curr_step)
@@ -133,7 +130,7 @@ class Trainer:
 
             # forward
             # track history if only in train
-            mode_start_time = time.time()
+
             optimizer.zero_grad()
             model.zero_grad()
 
@@ -145,11 +142,9 @@ class Trainer:
             loss.backward()
             optimizer.step()
             self.schedulers[idx].step()
-            print(f"model time is {time.time()-mode_start_time}")
             running_loss += loss.cpu().item() * inputs.size(0)
             num_examples += inputs.size(0)
             running_corrects += torch.sum(preds == labels.data).cpu()
-            start_data_time = time.time()
         self.curr_steps[idx] = curr_step
         time_elapsed = time.time() - since
         epoch_loss = running_loss / num_examples
