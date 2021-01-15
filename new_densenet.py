@@ -77,7 +77,6 @@ class DenseNet(nn.Module):
             out = self.relu(out)
             out = self.maxpool2d(out)
         if self.clustering_algorithm is not None and not self.clustering_done and not self.test_time:
-            self.keys_to_fit = []
             for i,image_index in enumerate(image_indexes):
                 self.keys_to_fit.append(int(image_index))
                 self.arrays_to_fit.append(out[i].cpu().detach().flatten().numpy().astype(np.int16))
