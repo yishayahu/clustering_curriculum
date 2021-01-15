@@ -131,9 +131,12 @@ class Trainer:
             # track history if only in train
             optimizer.zero_grad()
             model.zero_grad()
-
-            outputs = model(inputs, images_indexes)
-
+            try:
+                outputs = model(inputs, images_indexes)
+            except RuntimeError as err:
+                print(f" step of failure is {curr_step}")
+                print(err.args)
+                exit(-1)
             loss = self.loss_fn(outputs, labels)
             _, preds = torch.max(outputs, 1)
             curr_step += 1
