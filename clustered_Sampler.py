@@ -7,12 +7,12 @@ import torchvision.transforms.functional as F
 
 
 class ClusteredSampler(torch.utils.data.Sampler):
-    def __init__(self, data_source, tb):
+    def __init__(self, data_source, tb,decrease_center = 1):
         self.ds = data_source
         self.cluster_dict = None
         self.hiererchy = []
         self.do_dist = False
-
+        self.decrease_center = decrease_center
         self.n_cluster = int(os.environ['n_cluster'])
         self.center = self.n_cluster
         self.tb = tb
@@ -53,7 +53,7 @@ class ClusteredSampler(torch.utils.data.Sampler):
         assert self.cluster_dict
         print(f"self.center is {self.center}")
         curr_hiererchy = {}
-        self.center -= (2 if os.environ["use_imagenet"] == "True" else 1)
+        self.center -= self.decrease_center
         for i in range(self.n_cluster):
             curr_hiererchy[self.hiererchy[i]] = np.exp(-0.2 * abs(self.center - i)) if i < self.center else 1
         diffs = {}

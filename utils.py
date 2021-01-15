@@ -10,13 +10,12 @@ import torchvision.transforms as tvtf
 import gc
 
 
-
 class Cifar10Ds(torch.utils.data.Dataset):
     def __init__(self, data_root, is_train=True, is_eval=False, max_index=5):
         transforms = tvtf.Compose([tvtf.RandomHorizontalFlip(p=0.5),
                                    tvtf.RandomVerticalFlip(p=0.5),
-                                   tvtf.RandomRotation(degrees=(-90,90)),
-                                   tvtf.ColorJitter(brightness=0.2,contrast=0.2),
+                                   tvtf.RandomRotation(degrees=(-90, 90)),
+                                   tvtf.ColorJitter(brightness=0.2, contrast=0.2),
                                    tvtf.ToTensor(),
                                    tvtf.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
                                    ])
@@ -40,21 +39,63 @@ class Cifar10Ds(torch.utils.data.Dataset):
         gc.collect()
 
     def __getitem__(self, item):
-        img,label = self.ds[item]
-        return (img,item+self.base_index),label
+        img, label = self.ds[item]
+        return (img, item + self.base_index), label
 
     def __len__(self):
         return len(self.ds)
 
+
+class TinyInDs(torch.utils.data.Dataset):
+    def __init__(self, data_root, is_train=True, is_eval=False, max_index=5):
+        _MEAN = [0.485, 0.456, 0.406]
+        _STD = [0.229, 0.224, 0.225]
+        transforms = tvtf.Compose([tvtf.RandomHorizontalFlip(p=0.5),
+                                   tvtf.RandomVerticalFlip(p=0.2),
+                                   tvtf.GaussianBlur((21,21)),
+                                   tvtf.RandomAffine(scale=(0.8,1.5),degrees=(-45,45),translate=(0,0.2)),
+                                   tvtf.RandomCrop(50),
+                                   tvtf.ToTensor(),
+                                   tvtf.Normalize(_MEAN, _STD),
+                                   ])
+
+        if is_train or is_eval:
+            data_root = os.path.join(data_root, "train")
+            if is_train:
+
+                def is_valid_file(path1):
+                    return int(path1.split("_")[-1].split(".")[0]) < max_index
+            else:
+
+                assert is_eval
+
+                def is_valid_file(path1):
+                    return int(path1.split("_")[-1].split(".")[0]) >= max_index
+        else:
+            data_root = os.path.join(data_root, "new_val")
+            def is_valid_file(path1):
+                return True
+        self.ds = torchvision.datasets.ImageFolder(root=data_root, is_valid_file=is_valid_file,transform=transforms)
+        self.batch_len  = len(self.ds) if os.environ["my_computer"] == "False" else (int(os.environ["batch_size"]) *5)
+    def __getitem__(self, item):
+        img,label = self.ds[item]
+        assert 0<=label<200
+        return (img,item),label
+    def __len__(self):
+        len(self.ds)
+    def restart(self):
+        self.collect_garbage()
+    def collect_garbage(self):
+        gc.collect()
 
 class DS_by_batch(torch.utils.data.Dataset):
     def __init__(self, data_root, is_train=True, is_eval=False, max_index=10):
         _MEAN = [0.485, 0.456, 0.406]
         _STD = [0.229, 0.224, 0.225]
         self.transforms = tvtf.Compose([tvtf.RandomCrop(52),
-                                   tvtf.RandomVerticalFlip(p=0.25),
-                                   tvtf.RandomRotation(degrees=(-90,90)),
-                                   tvtf.RandomHorizontalFlip(p=0.25)])
+                                        tvtf.RandomVerticalFlip(p=0.25),
+                                        tvtf.RandomRotation(degrees=(-90, 90)),
+                                        tvtf.RandomHorizontalFlip(p=0.25)])
         self.normalize = tvtf.Normalize(_MEAN, _STD)
         self.data_root = data_root
 
@@ -68,10 +109,9 @@ class DS_by_batch(torch.utils.data.Dataset):
             assert not is_eval
 
         self.curr_batch = None
-        self.batch_len = 128116 if os.environ["my_computer"] == "False" else (
-                    512 * 5)  # self.curr_batch["Y_train"].shape[0]
+        self.batch_len = 128116 if os.environ["my_computer"] == "False" else (int(os.environ["batch_size"]) *5)  # self.curr_batch["Y_train"].shape[0]
         if not is_train and not is_eval:
-            self.batch_len = 50000 if os.environ["my_computer"] == "False" else (512 * 5)
+            self.batch_len = 50000 if os.environ["my_computer"] == "False" else (int(os.environ["batch_size"]) *5)
         self.is_train = is_train
         self.max_index = max_index if os.environ["my_computer"] == "False" else 1
 
@@ -97,12 +137,11 @@ class DS_by_batch(torch.utils.data.Dataset):
         if self.is_train or self.is_eval:
             img = self.transforms(img)
         img = self.normalize(img)
-        return (img,item+((self.curr_batch_idx-1)*self.batch_len)), self.curr_batch["Y_train"][item]
+        return (img, item + ((self.curr_batch_idx - 1) * self.batch_len)), self.curr_batch["Y_train"][item]
 
     def __len__(self):
         assert False
         return self.batch_len
-
 
 
 def create_data_loaders(datasets, samplers):
@@ -158,9 +197,9 @@ def load_databatch(data_folder, idx, img_size=64, name="train"):
     if name == "train":
         mean_image = d['mean']
 
-    x = x/np.float32(255)
+    x = x / np.float32(255)
     if name == "train":
-        mean_image = mean_image/np.float32(255)
+        mean_image = mean_image / np.float32(255)
 
     # Labels are indexed from 1, shift it so that indexes start at 0
     y = [i - 1 for i in y]

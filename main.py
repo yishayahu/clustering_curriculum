@@ -1,11 +1,12 @@
 import os
-use_imagenet = True
 my_computer = "False"
 os.environ["my_computer"] = my_computer
-os.environ["batch_size"] = "512"
-os.environ["use_imagenet"] = str(use_imagenet)
-
-
+os.environ["batch_size"] = "256" if not my_computer else "52"
+os.environ["dataset_name"] = "tiny_imagenet"
+network_to_use = "DenseNet"
+# network_to_use = "ResNet50"
+optimizer_to_use = ""
+schduler_to_use = ""
 
 import torch
 import torchvision
@@ -14,8 +15,10 @@ import torch.nn as nn
 from clustered_Sampler import ClusteredSampler, RegularSampler
 import utils
 from new_resnet import *
+from new_densenet import DenseNet
 from trainer import Trainer
 import clustering_algorithms
+import torchviz
 import numpy as np
 
 
@@ -29,22 +32,42 @@ def main(exp_name="cifar_10_with_aug"):
 
     print(torch.cuda.get_device_name(0))
     if str(my_computer) == "False":
-        os.environ["n_cluster"] = "500" if use_imagenet else "50"
+        n_clusters = None
+        if os.environ["dataset_name"] == "imagenet":
+            n_clusters = 500
+        elif os.environ["dataset_name"] == "cifar10":
+            n_clusters = 20
+        elif os.environ["dataset_name"] == "tiny_imagenet":
+            n_clusters = 200
+        os.environ["n_cluster"] = str(n_clusters)
     else:
         os.environ["n_cluster"] = "10"
     print(f"n clustrs is {os.environ['n_cluster']}")
+    n_classes = None
+    if os.environ["dataset_name"] == "imagenet":
+        n_classes = 1000
+    elif os.environ["dataset_name"] == "cifar10":
+        n_classes = 10
+    elif os.environ["dataset_name"] == "tiny_imagenet":
+        n_classes = 200
 
-    models = [resnet50(num_classes=1000 if use_imagenet else 10,
-                       clustering_algorithm=clustering_algorithms.KmeanSklearnByBatch(
-                           n_clusters=int(os.environ['n_cluster'])),
-                       pretrained=False),
-              resnet50(num_classes=1000 if use_imagenet else 10, pretrained=False)]
+    if network_to_use == "DenseNet":
+        models = [DenseNet(200,clustering_algorithm=clustering_algorithms.KmeanSklearnByBatch(
+            n_clusters=int(os.environ['n_cluster']))),DenseNet(200)]
+    elif network_to_use == "ResNet50":
+        models = [resnet50(num_classes=n_classes,
+                           clustering_algorithm=clustering_algorithms.KmeanSklearnByBatch(
+                               n_clusters=int(os.environ['n_cluster'])),
+                           pretrained=False),
+                  resnet50(num_classes=n_classes, pretrained=False)]
+    else:
+        models = []
     for model in models:
         model.to(device=device)
     train_dls, eval_dls, test_dls = [], [], []
     # create cluster resnet data
 
-    if use_imagenet:
+    if os.environ["dataset_name"] == "imagenet":
         train_set_normal, test_set = utils.DS_by_batch(
             data_root=os.path.join(os.path.dirname(os.getcwd()), "data", "data_clustering", "imagenet"),
             max_index=10), utils.DS_by_batch(
@@ -55,7 +78,7 @@ def main(exp_name="cifar_10_with_aug"):
             max_index=9), utils.DS_by_batch(
             data_root=os.path.join(os.path.dirname(os.getcwd()), "data", "data_clustering", "imagenet"), is_eval=True,
             is_train=False)
-    else:
+    elif os.environ["dataset_name"] == "cifar10":
         train_set_normal, test_set = utils.Cifar10Ds(
             data_root=os.path.join(os.path.dirname(os.getcwd()), "data", "data_clustering"),
             max_index=5), utils.Cifar10Ds(
@@ -66,14 +89,31 @@ def main(exp_name="cifar_10_with_aug"):
             max_index=4), utils.Cifar10Ds(
             data_root=os.path.join(os.path.dirname(os.getcwd()), "data", "data_clustering"), is_eval=True,
             is_train=False)
+    elif os.environ["dataset_name"] == "tiny_imagenet":
+        train_set_normal, test_set = utils.TinyInDs(
+            data_root=os.path.join(os.path.dirname(os.getcwd()), "data", "data_clustering","tiny-imagenet-200"),
+            max_index=500), utils.TinyInDs(
+            data_root=os.path.join(os.path.dirname(os.getcwd()), "data", "data_clustering","tiny-imagenet-200"), is_train=False,
+            is_eval=False)
+        train_set_clustered, eval_set = utils.TinyInDs(
+            data_root=os.path.join(os.path.dirname(os.getcwd()), "data", "data_clustering","tiny-imagenet-200"),
+            max_index=400), utils.TinyInDs(
+            data_root=os.path.join(os.path.dirname(os.getcwd()), "data", "data_clustering","tiny-imagenet-200"), is_eval=True,
+            is_train=False,max_index=400)
+    else:
+        raise Exception("1")
     tb = utils.Tb(exp_name=exp_name)
     print("clustreee")
     if str(my_computer) == "True":
         start_clustering = 6
-    elif use_imagenet:
-        start_clustering = 10000
     else:
-        start_clustering = 1000
+        if os.environ["dataset_name"] == "imagenet":
+            start_clustering = 10000
+        elif os.environ["dataset_name"] == "cifar10":
+            start_clustering = 1000
+        elif os.environ["dataset_name"] == "tiny_imagenet":
+            start_clustering = 2000
+
     clustered_smapler = ClusteredSampler(train_set_normal, tb=tb)
     train_dl, eval_dl, test_dl = utils.create_data_loaders([train_set_clustered, eval_set, test_set],
                                                            [RegularSampler(train_set_clustered),

@@ -151,7 +151,7 @@ class Trainer:
         if self.last_bar_update < curr_step and idx == 0:
             self.bar.update(curr_step)
             self.last_bar_update = curr_step
-        return time_elapsed, epoch_loss, epoch_acc, 0,self.schedulers[idx].get_lr()
+        return time_elapsed, epoch_loss, epoch_acc, 0,self.schedulers[idx].get_last_lr()
 
     def run_eval(self, idx):
         model = self.models[idx]
@@ -159,7 +159,7 @@ class Trainer:
         model.eval()
         dl = self.eval_dls[idx]
         if curr_step < self.start_clustering:
-            return 0, 0, 0, 0
+            return 0, 0, 0, 0,0
         running_loss = 0.0
         running_corrects = 0
         since = time.time()
@@ -201,7 +201,7 @@ class Trainer:
 
             model.clustering_algorithm = None
 
-        return time_elapsed, epoch_loss, epoch_acc, 0,None
+        return time_elapsed, epoch_loss, epoch_acc, 0, 0
 
     def run_test(self, idx):
         model = self.models[idx]
@@ -258,7 +258,7 @@ class Trainer:
         else:
             sub_epoch_acc = sub_running_corrects / sub_running_corrects_disc
 
-        return time_elapsed, epoch_loss, epoch_acc, sub_epoch_acc,None
+        return time_elapsed, epoch_loss, epoch_acc, sub_epoch_acc,0
 
     def save_epoch_results(self, phase, idx, curr_time, loss, acc, sub_acc,lr, step):
 
@@ -266,7 +266,8 @@ class Trainer:
             self.tb.add_scalar(idx, phase + " loss", loss, step)
             self.tb.add_scalar(idx, phase + " curr_time", curr_time, step)
             self.tb.add_scalar(idx, phase + " acc", acc, step)
-            self.tb.add_scalar(idx, phase + " lr", lr, step)
+            if lr:
+                self.tb.add_scalar(idx, phase + " lr", lr[0], step)
             if sub_acc:
                 self.tb.add_scalar(idx, phase + " sub_acc", sub_acc, step)
 
@@ -296,12 +297,12 @@ class Trainer:
                 curr_time, loss, acc, sub_acc,_ = self.run_eval(idx)
                 self.eval_dls[idx].dataset.collect_garbage()
                 if (curr_time, loss, acc, sub_acc) != (0, 0, 0, 0):
-                    self.save_epoch_results("eval", idx, curr_time, loss, acc, sub_acc, self.curr_steps[idx],lr=None)
+                    self.save_epoch_results("eval", idx, curr_time, loss, acc, sub_acc, step = self.curr_steps[idx],lr=None)
 
             curr_time, loss, acc, sub_acc,_ = self.run_test(idx)
             self.test_dls[idx].dataset.collect_garbage()
             if (curr_time, loss, acc, sub_acc) != (0, 0, 0, 0):
-                self.save_epoch_results("test", idx, curr_time, loss, acc, sub_acc, self.curr_steps[idx],lr=None)
+                self.save_epoch_results("test", idx, curr_time, loss, acc, sub_acc, step = self.curr_steps[idx],lr=None)
 
             self.save_ckpt(model=self.models[idx], optimizer=self.optimizers[idx], step=self.curr_steps[idx], idx=idx,
                            exp_name=self.tb.exp_name)
