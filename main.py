@@ -18,7 +18,7 @@ from new_resnet import *
 from new_densenet import DenseNet
 from trainer import Trainer
 import clustering_algorithms
-import torchviz
+
 import numpy as np
 
 
