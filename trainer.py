@@ -114,7 +114,8 @@ class Trainer:
         model.train()
         since = time.time()
         epoch_viz = False
-        for (inputs, images_indexes), labels in tqdm(dl,desc=str(curr_step)):
+        bar = tqdm(dl)
+        for (inputs, images_indexes), labels in bar:
             if not epoch_viz:
                 # temp_labels = [label_to_str[x.item()] for x in labels[:20]]
                 self.tb.add_images(idx=idx, images=inputs[:20], title=f"train", step=curr_step)
@@ -139,6 +140,7 @@ class Trainer:
             loss = self.loss_fn(outputs, labels)
             _, preds = torch.max(outputs, 1)
             curr_step += 1
+            bar.set_description(f"step {curr_step} loss {loss}")
             loss.backward()
             optimizer.step()
             self.schedulers[idx].step()
@@ -198,7 +200,7 @@ class Trainer:
             self.clusters = model.get_clusters()
             self.train_dls[idx] = torch.utils.data.DataLoader(
                 self.clustered_sampler.ds, batch_size=int(os.environ["batch_size"]), sampler=self.clustered_sampler,
-                num_workers=0)
+                num_workers=2)
             self.train_dls[idx].sampler.create_distribiouns(self.clusters, eval_loss_dict)
 
             model.clustering_algorithm = None

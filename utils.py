@@ -145,7 +145,7 @@ def create_data_loaders(datasets, samplers):
             dl = torch.utils.data.DataLoader(
                 datasets[idx], batch_size=int(os.environ["batch_size"]), sampler=samplers[idx],
                 shuffle=True if not samplers[idx] else None,
-                num_workers=0)
+                num_workers=2)
             dls.append(dl)
         else:
             dls.append(None)
