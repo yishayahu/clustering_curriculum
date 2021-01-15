@@ -47,6 +47,8 @@ class DenseNet(nn.Module):
 
         # clustering area
         self.cluster_dict = {}
+        self.arrays_to_fit = []
+        self.keys_to_fit = []
         self.clustering_algorithm = clustering_algorithm  #
         self.clustering_done = False
         self.test_time = False
@@ -64,7 +66,6 @@ class DenseNet(nn.Module):
 
     def forward(self, x: Tensor,image_indexes) -> Tensor:
         out = x
-        print(os.popen('nvidia-smi').read())
         for block,bn in zip(self.blocks,self.bns):
             skip = out
             out = block(out)
@@ -72,24 +73,24 @@ class DenseNet(nn.Module):
                 continue
             out = torch.cat([skip,out],dim=1)
             skip = None
-            gc.collect()
             out = bn(out)
             out = self.relu(out)
             out = self.maxpool2d(out)
         if self.clustering_algorithm is not None and not self.clustering_done and not self.test_time:
-            keys = []
-            arrays = []
+            self.keys_to_fit = []
             for i,image_index in enumerate(image_indexes):
-                keys.append(int(image_index))
-                arrays.append(out[i].cpu().detach().flatten().numpy().astype(np.int16))
-            self.clustering_algorithm.partial_fit(arrays)
-            labels = self.clustering_algorithm.predict(arrays)
-            assert len(keys) == len(labels)
-            for k,l in zip(keys,labels):
-                self.cluster_dict[k] = int(l)
-            keys = None # do not erase
-            arrays = None # do not erase
-            labels = None # do not erase
+                self.keys_to_fit.append(int(image_index))
+                self.arrays_to_fit.append(out[i].cpu().detach().flatten().numpy().astype(np.int16))
+
+            if len(self.arrays_to_fit) >= int(os.environ["n_cluster"]):
+                self.clustering_algorithm.partial_fit(self.arrays_to_fit)
+                labels = self.clustering_algorithm.predict(self.arrays_to_fit)
+                assert len(self.keys_to_fit) == len(labels)
+                for k,l in zip(self.keys_to_fit,labels):
+                    self.cluster_dict[k] = int(l)
+                labels = None # do not erase
+                self.arrays_to_fit = []
+                self.keys_to_fit = []
             gc.collect()
         out = self.last_conv(out)
         out = F.adaptive_avg_pool2d(out,(1,1)).squeeze()

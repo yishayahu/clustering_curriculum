@@ -1,7 +1,7 @@
 import os
 my_computer = "False"
 os.environ["my_computer"] = my_computer
-os.environ["batch_size"] = "256" if my_computer == "False" else "26"
+os.environ["batch_size"] = "128" if my_computer == "False" else "26"
 os.environ["dataset_name"] = "tiny_imagenet"
 network_to_use = "DenseNet"
 # network_to_use = "ResNet50"
@@ -46,9 +46,9 @@ def main(exp_name="debug"):
         n_classes = 200
 
     if network_to_use == "DenseNet":
-        # models = [DenseNet(200,clustering_algorithm=clustering_algorithms.KmeanSklearnByBatch(
-        #     n_clusters=int(os.environ['n_cluster']))),DenseNet(200)]
-        models = [DenseNet(200),resnet50(num_classes=200,pretrained=False)]
+        models = [DenseNet(200,clustering_algorithm=clustering_algorithms.KmeanSklearnByBatch(
+            n_clusters=int(os.environ['n_cluster']))),DenseNet(200)]
+        # models = [DenseNet(200),resnet50(num_classes=200,pretrained=False)]
         optimizer1 = torch.optim.RMSprop(models[0].parameters(), lr=0.0001, eps=1e-08)
         scheduler1 =torch.optim.lr_scheduler.CyclicLR(optimizer1, base_lr=0.0001, max_lr=0.0006,step_size_up=4686,mode="triangular2")
         optimizer2 = torch.optim.RMSprop(models[1].parameters(), lr=0.0001, eps=1e-08)
