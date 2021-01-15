@@ -7,6 +7,7 @@ import time
 
 import torch
 import torchvision.transforms.functional as F
+from tqdm import tqdm
 
 import utils
 from label_to_str import label_to_str
@@ -113,7 +114,8 @@ class Trainer:
         model.train()
         since = time.time()
         epoch_viz = False
-        for (inputs, images_indexes), labels in dl:
+        print(f"training from step {curr_step}")
+        for (inputs, images_indexes), labels in tqdm(dl,desc=str(curr_step)):
             if not epoch_viz:
                 # temp_labels = [label_to_str[x.item()] for x in labels[:20]]
                 self.tb.add_images(idx=idx, images=inputs[:20], title=f"train", step=curr_step)
