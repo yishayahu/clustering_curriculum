@@ -64,7 +64,7 @@ class DenseNet(nn.Module):
 
     def forward(self, x: Tensor,image_indexes) -> Tensor:
         out = x
-        print(os.popen('cat /etc/services').read())
+        print(os.popen('nvidia-smi').read())
         for block,bn in zip(self.blocks,self.bns):
             skip = out
             out = block(out)
