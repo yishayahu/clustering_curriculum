@@ -1,3 +1,4 @@
+import json
 import os
 import hashlib
 import pickle
@@ -9,6 +10,7 @@ import random
 import torchvision.transforms as tvtf
 import gc
 from augmentor import MyAugmentor
+image_name_to_idx = json.load(open("image_name_to_idx.json"))
 
 class Cifar10Ds(torch.utils.data.Dataset):
     def __init__(self, data_root, is_train=True, is_eval=False, max_index=5):
@@ -48,7 +50,6 @@ class Cifar10Ds(torch.utils.data.Dataset):
 class TinyInDs(torch.utils.data.Dataset):
     def __init__(self, data_root, is_train=True, is_eval=False, max_index=500):
 
-        self.aug = None
         if is_train or is_eval:
             transforms = tvtf.Compose([MyAugmentor(),tvtf.ToTensor()])
             data_root = os.path.join(data_root, "train")
@@ -72,7 +73,9 @@ class TinyInDs(torch.utils.data.Dataset):
     def __getitem__(self, item):
         img,label = self.ds[item]
         assert 0<=label<200
-        return (img,item),label
+        image_name  = os.path.split(self.ds.imgs[item][0])[-1].split(".")[0]
+        image_index = image_name_to_idx[image_name]
+        return (img,image_index),label
     def __len__(self):
         len(self.ds)
     def restart(self):
