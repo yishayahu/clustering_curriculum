@@ -201,7 +201,7 @@ class Trainer:
             self.clusters = model.get_clusters()
             self.train_dls[idx] = torch.utils.data.DataLoader(
                 self.clustered_sampler.ds, batch_size=int(os.environ["batch_size"]), sampler=self.clustered_sampler,
-                num_workers=2)
+                num_workers=4,pin_memory=True)
             self.train_dls[idx].sampler.create_distribiouns(self.clusters, eval_loss_dict)
 
             model.clustering_algorithm = None

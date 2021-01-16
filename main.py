@@ -142,7 +142,7 @@ def main(exp_name="debug"):
 
     trainer = Trainer(models=models, train_dls=train_dls, eval_dls=eval_dls, test_dls=test_dls,
                       loss_fn=nn.CrossEntropyLoss(), loss_fn_eval=nn.CrossEntropyLoss(reduction="none"),
-                      optimizers=[optimizer1,optimizer2],schedulers=[scheduler1,scheduler2], num_steps=300000, tb=tb, load=False, clustered_sampler=clustered_smapler,
+                      optimizers=[optimizer1,optimizer2],schedulers=[scheduler1,scheduler2], num_steps=300000, tb=tb, load=True, clustered_sampler=clustered_smapler,
                       start_clustering=start_clustering)
     trainer.train_models()
 

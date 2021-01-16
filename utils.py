@@ -80,6 +80,10 @@ class TinyInDs(torch.utils.data.Dataset):
             image_name  = os.path.split(self.ds.imgs[item][0])[-1].split(".")[0]
             image_index = image_name_to_idx[image_name]
         return (img,image_index),label
+    def get_image_index(self,idx):
+        image_name  = os.path.split(self.ds.imgs[idx][0])[-1].split(".")[0]
+        image_index = image_name_to_idx[image_name]
+        return image_index
     def __len__(self):
         len(self.ds)
     def restart(self):
@@ -152,7 +156,7 @@ def create_data_loaders(datasets, samplers):
             dl = torch.utils.data.DataLoader(
                 datasets[idx], batch_size=int(os.environ["batch_size"]), sampler=samplers[idx],
                 shuffle=True if not samplers[idx] else None,
-                num_workers=2)
+                num_workers=4,pin_memory=True)
             dls.append(dl)
         else:
             dls.append(None)
