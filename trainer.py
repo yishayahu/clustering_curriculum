@@ -101,6 +101,7 @@ class Trainer:
             print(f"model saved step is: {step} idx: {idx}")
 
     def run_train(self, idx):
+
         model = self.models[idx]
         curr_step = self.curr_steps[idx]
 
@@ -290,7 +291,7 @@ class Trainer:
         while True:
             if min(self.curr_steps) > self.num_steps:
                 break
-            idx = 0# np.argmin(self.curr_steps)
+            idx = np.argmin(self.curr_steps)
             assert idx in [0, 1]  # todo: remove
 
             curr_time, loss, acc, sub_acc,curr_lr = self.run_train(idx)

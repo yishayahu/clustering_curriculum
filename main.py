@@ -122,7 +122,7 @@ def main(exp_name="debug"):
         elif os.environ["dataset_name"] == "cifar10":
             start_clustering = 1000
         elif os.environ["dataset_name"] == "tiny_imagenet":
-            start_clustering = 500
+            start_clustering = 2000
 
     clustered_smapler = ClusteredSampler(train_set_normal, tb=tb)
     train_dl, eval_dl, test_dl = utils.create_data_loaders([train_set_clustered, eval_set, test_set],
