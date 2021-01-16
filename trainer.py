@@ -290,7 +290,7 @@ class Trainer:
         while True:
             if min(self.curr_steps) > self.num_steps:
                 break
-            idx = np.argmin(self.curr_steps)
+            idx = 0# np.argmin(self.curr_steps)
             assert idx in [0, 1]  # todo: remove
 
             curr_time, loss, acc, sub_acc,curr_lr = self.run_train(idx)
