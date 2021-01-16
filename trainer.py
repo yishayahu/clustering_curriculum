@@ -52,7 +52,7 @@ class Trainer:
                 with open(pkl_filename, 'rb') as file:
                     self.train_dls[0].sampler.cluster_dict = pickle.load(file)
                 self.train_dls[0] = torch.utils.data.DataLoader(
-                    self.clustered_sampler.ds, batch_size=int(os.environ["batch_size"]), sampler=self.clustered_sampler,
+                    self.clustered_sampler.ds, batch_size=int(os.environ["batch_size"]), sampler=clustered_sampler,
                     num_workers=0)
                 self.models[0].clustering_algorithm = None
             else:
