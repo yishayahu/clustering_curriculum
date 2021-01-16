@@ -70,11 +70,15 @@ class TinyInDs(torch.utils.data.Dataset):
                 return True
         self.ds = torchvision.datasets.ImageFolder(root=data_root, is_valid_file=is_valid_file,transform=transforms)
         self.batch_len  = len(self.ds) if os.environ["my_computer"] == "False" else (int(os.environ["batch_size"]) * 5)
+        self.is_test = not (is_eval or is_train)
     def __getitem__(self, item):
         img,label = self.ds[item]
         assert 0<=label<200
-        image_name  = os.path.split(self.ds.imgs[item][0])[-1].split(".")[0]
-        image_index = image_name_to_idx[image_name]
+        if self.is_test:
+            image_index = None
+        else:
+            image_name  = os.path.split(self.ds.imgs[item][0])[-1].split(".")[0]
+            image_index = image_name_to_idx[image_name]
         return (img,image_index),label
     def __len__(self):
         len(self.ds)
