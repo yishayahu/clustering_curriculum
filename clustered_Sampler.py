@@ -17,8 +17,6 @@ class ClusteredSampler(torch.utils.data.Sampler):
         self.center = self.n_cluster
         self.tb = tb
 
-
-
     def create_distribiouns(self, cluster_dict, eval_loss_dict):
         losses = np.zeros(self.n_cluster)
         amounts = np.zeros(self.n_cluster)
