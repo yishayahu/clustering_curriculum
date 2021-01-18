@@ -11,7 +11,6 @@ class ClusteredSampler(torch.utils.data.Sampler):
         self.ds = data_source
         self.cluster_dict = None
         self.hiererchy = []
-        self.do_dist = False
         self.decrease_center = decrease_center
         self.n_cluster = int(os.environ['n_cluster'])
         self.center = self.n_cluster
@@ -37,13 +36,13 @@ class ClusteredSampler(torch.utils.data.Sampler):
             losses[max_idx] = -1
         self.cluster_dict = cluster_dict
 
-    def is_in_train(self, labels):
-        to_return = [True] * len(labels)
-        if self.do_dist and self.cluster_dict:
-            for idx, label in enumerate(labels):
-                if self.center > self.hiererchy.index(label):
-                    to_return[idx] = False
-        return to_return
+    # def is_in_train(self, labels):
+    #     to_return = [True] * len(labels)
+    #     if self.do_dist and self.cluster_dict:
+    #         for idx, label in enumerate(labels):
+    #             if self.center > self.hiererchy.index(label):
+    #                 to_return[idx] = False
+    #     return to_return
 
     def __iter__(self):
         indexes = list(range(self.ds.batch_len))

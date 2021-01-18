@@ -47,22 +47,25 @@ class Trainer:
                 self.optimizers[i].load_state_dict(state_dict["optimizer_state_dict"])
                 self.curr_steps[i] = state_dict["step"]
                 self.last_save[i] = state_dict["step"]
-            if self.curr_steps[i] > start_clustering:
-                pkl_filename = f"ckpt/{self.tb.exp_name}_sampler_cluster_dict.pkl"
-                with open(pkl_filename, 'rb') as file:
-                    self.train_dls[0].sampler.cluster_dict = pickle.load(file)
-                self.train_dls[0] = torch.utils.data.DataLoader(
-                    clustered_sampler.ds, batch_size=int(os.environ["batch_size"]), sampler=clustered_sampler,
-                    num_workers=4,pin_memory=True)
-                self.models[0].clustering_algorithm = None
-            else:
-                print("loading before start clustering")
-                pkl_filename = f"ckpt/{self.tb.exp_name}_cluster_model.pkl"
-                with open(pkl_filename, 'rb') as file:
-                    self.models[0].clustering_algorithm.model = pickle.load(file)
-                pkl_filename = f"ckpt/{self.tb.exp_name}_resnet_cluster_dict.pkl"
-                with open(pkl_filename, 'rb') as file:
-                    self.models[0].cluster_dict = pickle.load(file)
+                if i == 0:
+                    if self.curr_steps[0] > start_clustering:
+                        pkl_filename = f"ckpt/{self.tb.exp_name}_sampler_cluster_dict.pkl"
+                        with open(pkl_filename, 'rb') as file:
+                            clustered_sampler.cluster_dict = pickle.load(file)
+                        clustered_sampler.center = state_dict["center"]
+                        clustered_sampler.hiererchy = state_dict["hiererchy"]
+                        self.train_dls[0] = torch.utils.data.DataLoader(
+                            clustered_sampler.ds, batch_size=int(os.environ["batch_size"]), sampler=clustered_sampler,
+                            num_workers=4,pin_memory=True)
+                        self.models[0].clustering_algorithm = None
+                    else:
+                        print("loading before start clustering")
+                        pkl_filename = f"ckpt/{self.tb.exp_name}_cluster_model.pkl"
+                        with open(pkl_filename, 'rb') as file:
+                            self.models[0].clustering_algorithm.model = pickle.load(file)
+                        pkl_filename = f"ckpt/{self.tb.exp_name}_resnet_cluster_dict.pkl"
+                        with open(pkl_filename, 'rb') as file:
+                            self.models[0].cluster_dict = pickle.load(file)
 
             print(f"running from steps {self.curr_steps}")
         self.start_clustering = start_clustering
@@ -80,11 +83,11 @@ class Trainer:
         if step - self.last_save[idx] > 1000:
             self.last_save[idx] = step
             print(f"start saving model for idx {idx}")
-            torch.save({
+            state_to_save = {
                 'step': step,
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
-            }, f"ckpt/model_{exp_name}_{idx}.pth")
+            }
             if idx == 0:
                 if model.clustering_algorithm is not None:
                     pkl_filename = f"ckpt/{exp_name}_cluster_model.pkl"
@@ -97,7 +100,9 @@ class Trainer:
                     pkl_filename = f"ckpt/{exp_name}_sampler_cluster_dict.pkl"
                     with open(pkl_filename, 'wb') as file:
                         pickle.dump(self.train_dls[idx].sampler.cluster_dict, file)
-
+                    state_to_save["center"] = self.train_dls[idx].sampler.center
+                    state_to_save["hiererchy"] = self.train_dls[idx].sampler.hiererchy
+            torch.save(state_to_save, f"ckpt/model_{exp_name}_{idx}.pth")
             print(f"model saved step is: {step} idx: {idx}")
 
     def run_train(self, idx):
