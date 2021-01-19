@@ -75,7 +75,7 @@ class TinyInDs(torch.utils.data.Dataset):
         img,label = self.ds[item]
         assert 0<=label<200
         if self.is_test:
-            image_index = -1
+            image_index = -item
         else:
             image_name  = os.path.split(self.ds.imgs[item][0])[-1].split(".")[0]
             image_index = image_name_to_idx[image_name]

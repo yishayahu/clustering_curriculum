@@ -87,19 +87,31 @@ class DenseNet(nn.Module):
             out = bn(out)
             out = self.relu(out)
             out = self.maxpool2d(out)
-        if self.clustering_algorithm is not None and not self.clustering_done and not self.test_time:
+        if self.clustering_algorithm is not None and not self.clustering_done:
+            keys = []
+            arrays = []
             for i, image_index in enumerate(image_indexes):
-                self.keys_to_fit.append(int(image_index))
-                self.arrays_to_fit.append(out[i].cpu().detach().flatten().numpy().astype(np.int16))
-            if len(self.arrays_to_fit) >= int(os.environ["n_cluster"]):
-                self.clustering_algorithm.partial_fit(self.arrays_to_fit)
-                labels = self.clustering_algorithm.predict(self.arrays_to_fit)
-                assert len(self.keys_to_fit) == len(labels)
-                for k, l in zip(self.keys_to_fit, labels):
+                keys.append(int(image_index))
+                arrays.append(out[i].cpu().detach().flatten().numpy().astype(np.int16))
+            if self.test_time:
+                labels = self.clustering_algorithm.predict(arrays)
+                for k, l in zip(keys, labels):
                     self.cluster_dict[k] = int(l)
-                labels = None  # do not erase
-                self.arrays_to_fit = []
-                self.keys_to_fit = []
+            else:
+                self.keys_to_fit += keys
+                self.arrays_to_fit += arrays
+                if len(self.arrays_to_fit) >= int(os.environ["n_cluster"]):
+                    self.clustering_algorithm.partial_fit(self.arrays_to_fit)
+                    labels = self.clustering_algorithm.predict(self.arrays_to_fit)
+                    assert len(self.keys_to_fit) == len(labels)
+                    for k, l in zip(self.keys_to_fit, labels):
+                        self.cluster_dict[k] = int(l)
+
+                    self.arrays_to_fit = []
+                    self.keys_to_fit = []
+            labels = None # do not erase
+            keys = []
+            arrays = []
             gc.collect()
         out = self.last_conv(out)
         out = F.adaptive_avg_pool2d(out, (1, 1)).squeeze()

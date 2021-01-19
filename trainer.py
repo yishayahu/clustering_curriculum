@@ -45,6 +45,7 @@ class Trainer:
                 state_dict = torch.load(f"ckpt/model_{self.tb.exp_name}_{i}.pth")
                 self.models[i].load_state_dict(state_dict["model_state_dict"])
                 self.optimizers[i].load_state_dict(state_dict["optimizer_state_dict"])
+                self.schedulers[i].load_state_dict(state_dict["sched_state_cidt"])
                 self.curr_steps[i] = state_dict["step"]
                 self.last_save[i] = state_dict["step"]
                 if i == 0:
@@ -87,6 +88,7 @@ class Trainer:
                 'step': step,
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
+                "sched_state_cidt": self.schedulers[idx].state_dict()
             }
             if idx == 0:
                 if model.clustering_algorithm is not None:
@@ -246,15 +248,14 @@ class Trainer:
 
                 loss = self.loss_fn(outputs, labels)
                 _, preds = torch.max(outputs, 1)
-                # if model.do_clustering() and self.clusters:
-                #     cluster_labels = model.clustering_algorithm.predict(inputs, model.cluster_dict, True)
-                #     is_in_train = self.train_dls[idx].sampler.is_in_train(cluster_labels)
-                #     assert len(is_in_train) == len(preds)
-                #     for pred, flag, label in zip(preds, is_in_train, labels.data):
-                #         if flag:
-                #             if pred == label:
-                #                 sub_running_corrects += 1
-                #             sub_running_corrects_disc += 1
+                if  self.clusters:
+                    is_in_train = self.train_dls[idx].sampler.is_in_train(image_indexes)
+                    assert len(is_in_train) == len(preds)
+                    for pred, flag, label in zip(preds, is_in_train, labels.data):
+                        if flag:
+                            if pred == label:
+                                sub_running_corrects += 1
+                            sub_running_corrects_disc += 1
                 running_loss += loss.cpu().item() * inputs.size(0)
                 num_examples += inputs.size(0)
                 running_corrects += torch.sum(preds == labels.data).cpu()
