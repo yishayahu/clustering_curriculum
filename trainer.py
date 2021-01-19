@@ -248,7 +248,7 @@ class Trainer:
 
                 loss = self.loss_fn(outputs, labels)
                 _, preds = torch.max(outputs, 1)
-                if  self.clusters:
+                if self.clusters and idx == 0:
                     is_in_train = self.train_dls[idx].sampler.is_in_train(image_indexes)
                     assert len(is_in_train) == len(preds)
                     for pred, flag, label in zip(preds, is_in_train, labels.data):
