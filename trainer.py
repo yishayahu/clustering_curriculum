@@ -148,7 +148,7 @@ class Trainer:
             loss = self.loss_fn(outputs, labels)
             _, preds = torch.max(outputs, 1)
             curr_step += 1
-            bar.set_description(f"step {curr_step} loss {loss}")
+            bar.set_description(f"step {curr_step} loss {loss:.3f}")
             loss.backward()
             optimizer.step()
             self.schedulers[idx].step()
@@ -161,7 +161,7 @@ class Trainer:
         epoch_acc = running_corrects.double() / num_examples
 
         if self.last_bar_update < curr_step and idx == 0:
-            self.bar.update(curr_step)
+            # self.bar.update(curr_step)
             self.last_bar_update = curr_step
         return time_elapsed, epoch_loss, epoch_acc, 0,self.schedulers[idx].get_last_lr()
 
@@ -283,7 +283,7 @@ class Trainer:
                 self.tb.add_scalar(idx, phase + " sub_acc", sub_acc, step)
 
         def print_results():
-            print(f"idx: {idx}, phase: {phase}, loss: {loss}, acc: {acc}")
+            print(f"idx: {idx}, phase: {phase}, loss: {loss:.3f}, acc: {acc:.3f}\n")
 
         self.times[phase][idx].append(curr_time)
         self.losses[phase][idx].append(loss)

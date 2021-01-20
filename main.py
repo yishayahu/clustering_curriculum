@@ -19,7 +19,7 @@ from new_densenet import DenseNet
 from trainer import Trainer
 import clustering_algorithms
 import numpy as np
-def main(exp_name="debug"):
+def main(exp_name="eval_at_the_end_and_viz",load=True):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
 
@@ -68,11 +68,11 @@ def main(exp_name="debug"):
 
     for model_idx, model in enumerate(models):
         print(f"copy model {model_idx} to device")
-        print(model)
-        print(f"model {model_idx} total param is {sum(p.numel() for p in model.parameters())}")
-        print(f"model {model_idx} traineble param is {sum(p.numel() for p in model.parameters() if p.requires_grad)}")
+        # print(model)
+        # print(f"model {model_idx} total param is {sum(p.numel() for p in model.parameters())}")
+        # print(f"model {model_idx} traineble param is {sum(p.numel() for p in model.parameters() if p.requires_grad)}")
         model.to(device=device)
-        print(os.popen('nvidia-smi').read())
+        # print(os.popen('nvidia-smi').read())
     train_dls, eval_dls, test_dls = [], [], []
     # create cluster resnet data
 
@@ -142,7 +142,7 @@ def main(exp_name="debug"):
 
     trainer = Trainer(models=models, train_dls=train_dls, eval_dls=eval_dls, test_dls=test_dls,
                       loss_fn=nn.CrossEntropyLoss(), loss_fn_eval=nn.CrossEntropyLoss(reduction="none"),
-                      optimizers=[optimizer1,optimizer2],schedulers=[scheduler1,scheduler2], num_steps=300000, tb=tb, load=False, clustered_sampler=clustered_smapler,
+                      optimizers=[optimizer1,optimizer2],schedulers=[scheduler1,scheduler2], num_steps=300000, tb=tb, load=load, clustered_sampler=clustered_smapler,
                       start_clustering=start_clustering)
     trainer.train_models()
 
