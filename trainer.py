@@ -148,7 +148,7 @@ class Trainer:
             loss = self.loss_fn(outputs, labels)
             _, preds = torch.max(outputs, 1)
             curr_step += 1
-            bar.set_description(f"step {curr_step} loss {loss:.3f}")
+            bar.set_description(f"idx: {idx} step {curr_step} loss {loss:.3f}")
             loss.backward()
             optimizer.step()
             self.schedulers[idx].step()

@@ -19,11 +19,19 @@ from new_densenet import DenseNet
 from trainer import Trainer
 import clustering_algorithms
 import numpy as np
+def seed_everything(seed=101):
+    random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    np.random.seed(seed)
+    os.environ['PYTHONHASHSEED'] = str(seed)
+
 def main(exp_name="eval_at_the_end_and_viz",load=True):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
 
     print(torch.cuda.get_device_name(0))
+    torch.seed()
     if str(my_computer) == "False":
         n_clusters = None
         if os.environ["dataset_name"] == "imagenet":
@@ -102,14 +110,14 @@ def main(exp_name="eval_at_the_end_and_viz",load=True):
         data_root = "/content/tiny-imagenet-200" if my_computer == "False" else os.path.join(os.path.dirname(os.getcwd()), "data", "data_clustering","tiny-imagenet-200")
         train_set_normal, test_set = utils.TinyInDs(
             data_root=data_root,
-            max_index=500), utils.TinyInDs(
+            max_index=500,do_aug=True), utils.TinyInDs(
             data_root=data_root, is_train=False,
-            is_eval=False)
+            is_eval=False,do_aug=False)
         train_set_clustered, eval_set = utils.TinyInDs(
             data_root=data_root,
-            max_index=400), utils.TinyInDs(
+            max_index=400,do_aug=False), utils.TinyInDs(
             data_root=data_root, is_eval=True,
-            is_train=False,max_index=400)
+            is_train=False,max_index=400,do_aug=False)
     else:
         raise Exception("1")
     tb = utils.Tb(exp_name=exp_name)
@@ -122,7 +130,7 @@ def main(exp_name="eval_at_the_end_and_viz",load=True):
         elif os.environ["dataset_name"] == "cifar10":
             start_clustering = 1000
         elif os.environ["dataset_name"] == "tiny_imagenet":
-            start_clustering = 2000
+            start_clustering = 3000
 
     clustered_smapler = ClusteredSampler(train_set_normal, tb=tb)
     train_dl, eval_dl, test_dl = utils.create_data_loaders([train_set_clustered, eval_set, test_set],

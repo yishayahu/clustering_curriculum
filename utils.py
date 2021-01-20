@@ -10,7 +10,9 @@ import random
 import torchvision.transforms as tvtf
 import gc
 from augmentor import MyAugmentor
+
 image_name_to_idx = json.load(open("image_name_to_idx.json"))
+
 
 class Cifar10Ds(torch.utils.data.Dataset):
     def __init__(self, data_root, is_train=True, is_eval=False, max_index=5):
@@ -48,10 +50,12 @@ class Cifar10Ds(torch.utils.data.Dataset):
 
 
 class TinyInDs(torch.utils.data.Dataset):
-    def __init__(self, data_root, is_train=True, is_eval=False, max_index=500):
-
+    def __init__(self, data_root, is_train=True, is_eval=False, max_index=500, do_aug=True):
+        if do_aug:
+            transforms = tvtf.Compose([MyAugmentor(), tvtf.ToTensor()])
+        else:
+            transforms = tvtf.Compose([tvtf.ToTensor()])
         if is_train or is_eval:
-            transforms = tvtf.Compose([MyAugmentor(),tvtf.ToTensor()])
             data_root = os.path.join(data_root, "train")
             if is_train:
 
@@ -65,31 +69,40 @@ class TinyInDs(torch.utils.data.Dataset):
                     return int(path1.split("_")[-1].split(".")[0]) >= max_index
         else:
             data_root = os.path.join(data_root, "new_val")
-            transforms = tvtf.Compose([tvtf.ToTensor()])
+
+
             def is_valid_file(path1):
                 return True
-        self.ds = torchvision.datasets.ImageFolder(root=data_root, is_valid_file=is_valid_file,transform=transforms)
-        self.batch_len  = len(self.ds) if os.environ["my_computer"] == "False" else (int(os.environ["batch_size"]) * 5)
+        self.ds = torchvision.datasets.ImageFolder(root=data_root, is_valid_file=is_valid_file, transform=transforms)
+        self.batch_len = len(self.ds) if os.environ["my_computer"] == "False" else (int(os.environ["batch_size"]) * 5)
         self.is_test = not (is_eval or is_train)
+
     def __getitem__(self, item):
-        img,label = self.ds[item]
-        assert 0<=label<200
+        img, label = self.ds[item]
+        assert 0 <= label < 200
         if self.is_test:
             image_index = -item
         else:
-            image_name  = os.path.split(self.ds.imgs[item][0])[-1].split(".")[0]
+            image_name = os.path.split(self.ds.imgs[item][0])[-1].split(".")[0]
             image_index = image_name_to_idx[image_name]
-        return (img,image_index),label
-    def get_image_index(self,idx):
-        image_name  = os.path.split(self.ds.imgs[idx][0])[-1].split(".")[0]
+        return (img, image_index), label
+
+    def get_image_index(self, idx):
+        image_name = os.path.split(self.ds.imgs[idx][0])[-1].split(".")[0]
         image_index = image_name_to_idx[image_name]
         return image_index
+
     def __len__(self):
         len(self.ds)
+
     def restart(self):
         self.collect_garbage()
+
     def collect_garbage(self):
         gc.collect()
+
+
+
 
 class DS_by_batch(torch.utils.data.Dataset):
     def __init__(self, data_root, is_train=True, is_eval=False, max_index=10):
@@ -112,9 +125,10 @@ class DS_by_batch(torch.utils.data.Dataset):
             assert not is_eval
 
         self.curr_batch = None
-        self.batch_len = 128116 if os.environ["my_computer"] == "False" else (int(os.environ["batch_size"]) *5)  # self.curr_batch["Y_train"].shape[0]
+        self.batch_len = 128116 if os.environ["my_computer"] == "False" else (
+                    int(os.environ["batch_size"]) * 5)  # self.curr_batch["Y_train"].shape[0]
         if not is_train and not is_eval:
-            self.batch_len = 50000 if os.environ["my_computer"] == "False" else (int(os.environ["batch_size"]) *5)
+            self.batch_len = 50000 if os.environ["my_computer"] == "False" else (int(os.environ["batch_size"]) * 5)
         self.is_train = is_train
         self.max_index = max_index if os.environ["my_computer"] == "False" else 1
 
@@ -156,7 +170,7 @@ def create_data_loaders(datasets, samplers):
             dl = torch.utils.data.DataLoader(
                 datasets[idx], batch_size=int(os.environ["batch_size"]), sampler=samplers[idx],
                 shuffle=True if not samplers[idx] else None,
-                num_workers=4,pin_memory=True)
+                num_workers=4, pin_memory=True)
             dls.append(dl)
         else:
             dls.append(None)

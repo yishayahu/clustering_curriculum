@@ -1,6 +1,9 @@
+import os
+
 import imgaug as ia
 import numpy
 from imgaug import augmenters as iaa
+ia.seed(int(os.environ['PYTHONHASHSEED']))
 
 # Defining Customized Imagedatagenerator using imgaug library
 class MyAugmentor:
