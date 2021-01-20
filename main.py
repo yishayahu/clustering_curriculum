@@ -3,6 +3,7 @@ my_computer = "False"
 os.environ["my_computer"] = my_computer
 os.environ["batch_size"] = "128" if my_computer == "False" else "26"
 os.environ["dataset_name"] = "tiny_imagenet"
+os.environ['PYTHONHASHSEED'] = str(101)
 network_to_use = "DenseNet"
 # network_to_use = "ResNet50"
 optimizer_to_use = ""
@@ -19,17 +20,18 @@ from new_densenet import DenseNet
 from trainer import Trainer
 import clustering_algorithms
 import numpy as np
-def seed_everything(seed=101):
+def seed_everything():
+    seed= int(os.environ['PYTHONHASHSEED'])
     random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
     np.random.seed(seed)
-    os.environ['PYTHONHASHSEED'] = str(seed)
+
 
 def main(exp_name="eval_at_the_end_and_viz",load=True):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
-
+    seed_everything()
     print(torch.cuda.get_device_name(0))
     torch.seed()
     if str(my_computer) == "False":
