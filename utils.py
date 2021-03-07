@@ -12,6 +12,8 @@ import gc
 from augmentor import MyAugmentor
 
 image_name_to_idx = json.load(open("image_name_to_idx.json"))
+image_name_to_idx_imagenet_train = json.load(open("image_name_to_idx_imagenet_train.json"))
+image_name_to_idx_imagenet_val = json.load(open("image_name_to_idx_imagenet_val.json"))
 
 
 class Cifar10Ds(torch.utils.data.Dataset):
@@ -74,7 +76,7 @@ class TinyInDs(torch.utils.data.Dataset):
             def is_valid_file(path1):
                 return True
         self.ds = torchvision.datasets.ImageFolder(root=data_root, is_valid_file=is_valid_file, transform=transforms)
-        self.batch_len = len(self.ds) if os.environ["my_computer"] == "False" else (int(os.environ["batch_size"]) * 5)
+        self.batch_len = len(self.ds)
         self.is_test = not (is_eval or is_train)
 
     def __getitem__(self, item):
@@ -102,6 +104,61 @@ class TinyInDs(torch.utils.data.Dataset):
         gc.collect()
 
 
+
+
+class ImageNetDs(torch.utils.data.Dataset):
+    def __init__(self, data_root, is_train=True, is_eval=False, max_index=500, do_aug=True):
+        if do_aug:
+            transforms = tvtf.Compose([MyAugmentor(), tvtf.ToTensor()])
+        else:
+            transforms = tvtf.Compose([tvtf.ToTensor()])
+        if is_train or is_eval:
+
+            data_root = os.path.join(data_root, "train")
+            if is_train:
+                self.image_name_to_idx = image_name_to_idx_imagenet_train
+                def is_valid_file(path1):
+                    if max_index == 500:
+                        return True
+                    else:
+                        return os.path.split(path1)[-1] in image_name_to_idx_imagenet_train
+
+            else:
+                self.image_name_to_idx = image_name_to_idx_imagenet_val
+                assert is_eval
+                def is_valid_file(path1):
+                    return os.path.split(path1)[-1] in image_name_to_idx_imagenet_val
+        else:
+            data_root = os.path.join(data_root, "val")
+            def is_valid_file(path1):
+                return True
+        self.ds = torchvision.datasets.ImageFolder(root=data_root, is_valid_file=is_valid_file, transform=transforms)
+        self.batch_len = len(self.ds)
+        self.is_test = not (is_eval or is_train)
+
+    def __getitem__(self, item):
+        img, label = self.ds[item]
+        assert 0 <= label < 1000
+        if self.is_test:
+            image_index = -item
+        else:
+            image_name = os.path.split(self.ds.imgs[item][0])[-1]
+            image_index = self.image_name_to_idx[image_name]
+        return (img, image_index), label
+
+    def get_image_index(self, idx):
+        image_name = os.path.split(self.ds.imgs[idx][0])[-1]
+        image_index = image_name_to_idx[image_name]
+        return image_index
+
+    def __len__(self):
+        len(self.ds)
+
+    def restart(self):
+        self.collect_garbage()
+
+    def collect_garbage(self):
+        gc.collect()
 
 
 class DS_by_batch(torch.utils.data.Dataset):
