@@ -37,7 +37,7 @@ def main(exp_name="eval_at_the_end_and_viz",load=True):
     if str(my_computer) == "False":
         n_clusters = None
         if os.environ["dataset_name"] == "imagenet":
-            n_clusters = 500
+            n_clusters = 512
         elif os.environ["dataset_name"] == "cifar10":
             n_clusters = 20
         elif os.environ["dataset_name"] == "tiny_imagenet":
@@ -87,16 +87,29 @@ def main(exp_name="eval_at_the_end_and_viz",load=True):
     # create cluster resnet data
 
     if os.environ["dataset_name"] == "imagenet":
-        train_set_normal, test_set = utils.DS_by_batch(
-            data_root=os.path.join(os.path.dirname(os.getcwd()), "data", "data_clustering", "imagenet"),
-            max_index=10), utils.DS_by_batch(
-            data_root=os.path.join(os.path.dirname(os.getcwd()), "data", "data_clustering", "imagenet"), is_train=False,
-            is_eval=False)
-        train_set_clustered, eval_set = utils.DS_by_batch(
-            data_root=os.path.join(os.path.dirname(os.getcwd()), "data", "data_clustering", "imagenet"),
-            max_index=9), utils.DS_by_batch(
-            data_root=os.path.join(os.path.dirname(os.getcwd()), "data", "data_clustering", "imagenet"), is_eval=True,
-            is_train=False)
+
+        data_root = "/home/ML_courses/datasets/imagenet/"
+        train_set_normal, test_set = utils.ImageNetDs(
+            data_root=data_root,
+            max_index=500, do_aug=True), utils.ImageNetDs(
+            data_root=data_root, is_train=False,
+            is_eval=False, do_aug=False)
+        train_set_clustered, eval_set = utils.ImageNetDs(
+            data_root=data_root,
+            max_index=400, do_aug=False), utils.ImageNetDs(
+            data_root=data_root, is_eval=True,
+            is_train=False, max_index=400, do_aug=False)
+        # train_set_normal, test_set = utils.DS_by_batch(
+        #     data_root=os.path.join(os.path.dirname(os.getcwd()), "data", "data_clustering", "imagenet"),
+        #     max_index=10), utils.DS_by_batch(
+        #     data_root=os.path.join(os.path.dirname(os.getcwd()), "data", "data_clustering", "imagenet"), is_train=False,
+        #     is_eval=False)
+        # train_set_clustered, eval_set = utils.DS_by_batch(
+        #     data_root=os.path.join(os.path.dirname(os.getcwd()), "data", "data_clustering", "imagenet"),
+        #     max_index=9), utils.DS_by_batch(
+        #     data_root=os.path.join(os.path.dirname(os.getcwd()), "data", "data_clustering", "imagenet"), is_eval=True,
+        #     is_train=False)
+
     elif os.environ["dataset_name"] == "cifar10":
         train_set_normal, test_set = utils.Cifar10Ds(
             data_root=os.path.join(os.path.dirname(os.getcwd()), "data", "data_clustering"),
