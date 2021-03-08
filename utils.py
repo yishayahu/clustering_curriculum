@@ -12,8 +12,9 @@ import gc
 from augmentor import MyAugmentor
 
 image_name_to_idx = json.load(open("image_name_to_idx.json"))
-image_name_to_idx_imagenet_train = json.load(open("image_name_to_idx_imagenet_train.json"))
-image_name_to_idx_imagenet_val = json.load(open("image_name_to_idx_imagenet_val.json"))
+if os.environ["dataset_name"] == "imagenet":
+    image_name_to_idx_imagenet_train = json.load(open("image_name_to_idx_imagenet_train.json"))
+    image_name_to_idx_imagenet_val = json.load(open("image_name_to_idx_imagenet_val.json"))
 
 
 class Cifar10Ds(torch.utils.data.Dataset):
