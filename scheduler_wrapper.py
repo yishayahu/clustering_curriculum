@@ -16,8 +16,9 @@ class chainedCyclicLr(torch.optim.lr_scheduler._LRScheduler):
             self.current = torch.optim.lr_scheduler.CyclicLR(self.optimizer, base_lr=self.base_lrs[self.i], max_lr=self.max_lrs[self.i],
                                                              step_size_up=self.step_sizes_up[self.i],
                                                              mode="triangular2")
-
-
+    @property
+    def _last_lr(self):
+        return self.current._last_lr
     def get_lr(self):
         return self.current.get_lr()
     def get_last_lr(self):
