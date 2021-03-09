@@ -13,6 +13,7 @@ import torch
 import torchvision
 import torchvision.transforms as tvtf
 import torch.nn as nn
+from scheduler_wrapper import chainedCyclicLr
 from clustered_Sampler import ClusteredSampler, RegularSampler
 import utils
 from new_resnet import *
@@ -28,7 +29,7 @@ def seed_everything():
     np.random.seed(seed)
 
 
-def main(exp_name="eval_at_the_end_and_viz",load=True):
+def main(exp_name="eval_at_the_end_and_viz",load=False):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
     seed_everything()
@@ -59,10 +60,14 @@ def main(exp_name="eval_at_the_end_and_viz",load=True):
         models = [DenseNet(200,clustering_algorithm=clustering_algorithms.KmeanSklearnByBatch(
             n_clusters=int(os.environ['n_cluster']))),DenseNet(200)]
         # models = [DenseNet(200),resnet50(num_classes=200,pretrained=False)]
+        base_lrs = [0.0001,0.00001,0.00001,0.000001]
+        max_lrs = [0.0006,0.00006,0.00006,0.000006]
+        step_sizes_up = [4686,4686,3128,1564]
+        ths = [0.52,0.61,0.62,0.99]
         optimizer1 = torch.optim.RMSprop(models[0].parameters(), lr=0.0001, eps=1e-08)
-        scheduler1 =torch.optim.lr_scheduler.CyclicLR(optimizer1, base_lr=0.0001, max_lr=0.0006,step_size_up=4686,mode="triangular2")
+        scheduler1 = chainedCyclicLr(optimizer=optimizer1,base_lrs=base_lrs,max_lrs=max_lrs,step_sizes_up=step_sizes_up,ths=ths)
         optimizer2 = torch.optim.RMSprop(models[1].parameters(), lr=0.0001, eps=1e-08)
-        scheduler2 =torch.optim.lr_scheduler.CyclicLR(optimizer1, base_lr=0.0001, max_lr=0.0006,step_size_up=4686,mode="triangular2")
+        scheduler2 = chainedCyclicLr(optimizer=optimizer2,base_lrs=base_lrs,max_lrs=max_lrs,step_sizes_up=step_sizes_up,ths=ths)
     elif network_to_use == "ResNet50":
         models = [resnet50(num_classes=n_classes,
                            clustering_algorithm=clustering_algorithms.KmeanSklearnByBatch(

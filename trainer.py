@@ -261,9 +261,11 @@ class Trainer:
                 running_corrects += torch.sum(preds == labels.data).cpu()
         model.done_test()
         self.curr_steps[idx] = curr_step
+
         time_elapsed = time.time() - since
         epoch_loss = running_loss / num_examples
         epoch_acc = running_corrects.double() / num_examples
+        self.schedulers[idx].update_sched(epoch_acc)
         if sub_running_corrects_disc == 0:
             sub_epoch_acc = None
         else:
