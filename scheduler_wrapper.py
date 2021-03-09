@@ -1,5 +1,5 @@
 import torch
-class chainedCyclicLr():
+class chainedCyclicLr:
     def __init__(self,optimizer,base_lrs,max_lrs,step_sizes_up,ths):
         self.i = 0
         self.base_lrs = base_lrs
