@@ -1,5 +1,5 @@
 import torch
-class chainedCyclicLr(torch.optim.lr_scheduler._LRScheduler):
+class chainedCyclicLr():
     def __init__(self,optimizer,base_lrs,max_lrs,step_sizes_up,ths):
         self.i = 0
         self.base_lrs = base_lrs
@@ -20,6 +20,8 @@ class chainedCyclicLr(torch.optim.lr_scheduler._LRScheduler):
 
     def get_lr(self):
         return self.current.get_lr()
+    def get_last_lr(self):
+        return self.current.get_last_lr()
     def step(self):
         return self.current.step()
     def state_dict(self):
