@@ -110,7 +110,7 @@ class TinyInDs(torch.utils.data.Dataset):
 class ImageNetDs(torch.utils.data.Dataset):
     def __init__(self, data_root, is_train=True, is_eval=False, max_index=500, do_aug=True):
         if do_aug:
-            transforms = tvtf.Compose(tvtf.Resize(size = (256,256)),[MyAugmentor(), tvtf.ToTensor()])
+            transforms = tvtf.Compose([tvtf.Resize(size = (256,256)),MyAugmentor(), tvtf.ToTensor()])
         else:
             transforms = tvtf.Compose([tvtf.Resize(size = (256,256)),tvtf.ToTensor()])
         if is_train or is_eval:
