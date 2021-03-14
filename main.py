@@ -1,7 +1,7 @@
 import os
 my_computer = "False"
 os.environ["my_computer"] = my_computer
-os.environ["batch_size"] = "128" if my_computer == "False" else "26"
+os.environ["batch_size"] = "256" if my_computer == "False" else "26"
 os.environ["dataset_name"] = "tiny_imagenet"
 os.environ['PYTHONHASHSEED'] = str(101)
 network_to_use = "DenseNet"
@@ -39,6 +39,7 @@ def main(exp_name="eval_at_the_end_and_viz",load=False):
         n_clusters = None
         if os.environ["dataset_name"] == "imagenet":
             n_clusters = 512
+            os.environ["batch_size"] = 512
         elif os.environ["dataset_name"] == "cifar10":
             n_clusters = 20
         elif os.environ["dataset_name"] == "tiny_imagenet":
@@ -146,7 +147,7 @@ def main(exp_name="eval_at_the_end_and_viz",load=False):
         start_clustering = 6
     else:
         if os.environ["dataset_name"] == "imagenet":
-            start_clustering = 10000
+            start_clustering = 20000
         elif os.environ["dataset_name"] == "cifar10":
             start_clustering = 1000
         elif os.environ["dataset_name"] == "tiny_imagenet":
