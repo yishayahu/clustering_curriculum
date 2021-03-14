@@ -11,8 +11,8 @@ class chainedCyclicLr(torch.optim.lr_scheduler._LRScheduler):
                                           mode="triangular2")
     def update_sched(self,val_acc):
         if val_acc > self.ths[self.i]:
-            print(f"switch to sched {self.i} with params {self.base_lrs[self.i]},")
             self.i+=1
+            print(f"switch to sched {self.i} with params {self.base_lrs[self.i]},")
             self.current = torch.optim.lr_scheduler.CyclicLR(self.optimizer, base_lr=self.base_lrs[self.i], max_lr=self.max_lrs[self.i],
                                                              step_size_up=self.step_sizes_up[self.i],
                                                              mode="triangular2")

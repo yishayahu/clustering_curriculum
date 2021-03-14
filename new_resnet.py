@@ -1,4 +1,5 @@
 import gc
+import os
 import random
 
 import torch
@@ -157,6 +158,8 @@ class ResNet(nn.Module):
 
         # clustering area
         self.cluster_dict = {}
+        self.arrays_to_fit = []
+        self.keys_to_fit = []
         self.clustering_algorithm = clustering_algorithm  #
         self.clustering_done = False
         self.test_time = False
@@ -225,21 +228,33 @@ class ResNet(nn.Module):
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
 
-        if self.clustering_algorithm is not None and not self.clustering_done and not self.test_time:
+        if self.clustering_algorithm is not None and not self.clustering_done:
             keys = []
             arrays = []
-            for i,image_index in enumerate(image_indexes):
+            for i, image_index in enumerate(image_indexes):
                 keys.append(int(image_index))
                 arrays.append(x[i].cpu().detach().numpy().astype(np.int16))
-            self.clustering_algorithm.partial_fit(arrays)
-            labels = self.clustering_algorithm.predict(arrays)
-            assert len(keys) == len(labels)
-            for k,l in zip(keys,labels):
-                self.cluster_dict[k] = int(l)
-            keys = None # do not erase
-            arrays = None # do not erase
+            if self.test_time:
+                labels = self.clustering_algorithm.predict(arrays)
+                for k, l in zip(keys, labels):
+                    self.cluster_dict[k] = int(l)
+            else:
+                self.keys_to_fit += keys
+                self.arrays_to_fit += arrays
+                if len(self.arrays_to_fit) >= int(os.environ["n_cluster"]):
+                    self.clustering_algorithm.partial_fit(self.arrays_to_fit)
+                    labels = self.clustering_algorithm.predict(self.arrays_to_fit)
+                    assert len(self.keys_to_fit) == len(labels)
+                    for k, l in zip(self.keys_to_fit, labels):
+                        self.cluster_dict[k] = int(l)
+
+                    self.arrays_to_fit = []
+                    self.keys_to_fit = []
             labels = None # do not erase
+            keys = []
+            arrays = []
             gc.collect()
+
         x = self.fc(x)
 
         return x
