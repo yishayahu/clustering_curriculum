@@ -152,8 +152,8 @@ def main(exp_name="eval_at_the_end_and_viz",load=False):
             start_clustering = 1000
         elif os.environ["dataset_name"] == "tiny_imagenet":
             start_clustering = 3000
-
-    clustered_smapler = ClusteredSampler(train_set_normal, tb=tb)
+    num_steps = 70000
+    clustered_smapler = ClusteredSampler(train_set_normal, tb=tb,decrease_center=n_clusters/(num_steps*0.9))
     train_dl, eval_dl, test_dl = utils.create_data_loaders([train_set_clustered, eval_set, test_set],
                                                            [RegularSampler(train_set_clustered),
                                                             RegularSampler(eval_set), RegularSampler(test_set)])
@@ -171,7 +171,7 @@ def main(exp_name="eval_at_the_end_and_viz",load=False):
 
     trainer = Trainer(models=models, train_dls=train_dls, eval_dls=eval_dls, test_dls=test_dls,
                       loss_fn=nn.CrossEntropyLoss(), loss_fn_eval=nn.CrossEntropyLoss(reduction="none"),
-                      optimizers=[optimizer1,optimizer2],schedulers=[scheduler1,scheduler2], num_steps=300000, tb=tb, load=load, clustered_sampler=clustered_smapler,
+                      optimizers=[optimizer1,optimizer2],schedulers=[scheduler1,scheduler2], num_steps=num_steps, tb=tb, load=load, clustered_sampler=clustered_smapler,
                       start_clustering=start_clustering)
     trainer.train_models()
 
