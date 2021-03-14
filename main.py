@@ -39,7 +39,7 @@ def main(exp_name="eval_at_the_end_and_viz",load=False):
         n_clusters = None
         if os.environ["dataset_name"] == "imagenet":
             n_clusters = 512
-            os.environ["batch_size"] = 512
+            os.environ["batch_size"] = str(512)
         elif os.environ["dataset_name"] == "cifar10":
             n_clusters = 20
         elif os.environ["dataset_name"] == "tiny_imagenet":
