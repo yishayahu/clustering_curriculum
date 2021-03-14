@@ -1,7 +1,7 @@
 import os
 my_computer = "False"
 os.environ["my_computer"] = my_computer
-os.environ["batch_size"] = "256" if my_computer == "False" else "26"
+os.environ["batch_size"] = "128" if my_computer == "False" else "26"
 os.environ["dataset_name"] = "tiny_imagenet"
 os.environ['PYTHONHASHSEED'] = str(101)
 network_to_use = "DenseNet"
