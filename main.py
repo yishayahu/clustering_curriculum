@@ -152,8 +152,8 @@ def main(exp_name="eval_at_the_end_and_viz",load=False):
             start_clustering = 1000
         elif os.environ["dataset_name"] == "tiny_imagenet":
             start_clustering = 3000
-    num_steps = 70000
-    clustered_smapler = ClusteredSampler(train_set_normal, tb=tb,decrease_center=n_clusters/(num_steps*0.9))
+    num_steps = 100000
+    clustered_smapler = ClusteredSampler(train_set_normal, tb=tb,decrease_center=n_clusters / 100)
     train_dl, eval_dl, test_dl = utils.create_data_loaders([train_set_clustered, eval_set, test_set],
                                                            [RegularSampler(train_set_clustered),
                                                             RegularSampler(eval_set), RegularSampler(test_set)])
