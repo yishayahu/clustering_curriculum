@@ -211,9 +211,9 @@ class ResNet(nn.Module):
         self.test_time = True
     def done_test(self):
         self.test_time = False
-    def _forward_impl(self, x,image_indexes):
+    def _forward_impl(self, x,image_indexes=0):
         # See note [TorchScript super()]
-        assert x.shape[0]  == len(image_indexes)
+        # assert x.shape[0]  == len(image_indexes)
 
         x = self.conv1(x)
         x = self.bn1(x)
@@ -259,7 +259,7 @@ class ResNet(nn.Module):
 
         return x
 
-    def forward(self, x,img_indexes):
+    def forward(self, x,img_indexes=0):
         return self._forward_impl(x,img_indexes)
 
     def get_clusters(self):
