@@ -136,7 +136,7 @@ def main_worker(gpu, ngpus_per_node, args):
         model = models.__dict__[args.arch](pretrained=True)
     else:
         print("=> creating model '{}'".format(args.arch))
-        if args.arch == "resnet_18":
+        if args.arch == "resnet18":
             model =  resnet18(num_classes=1000, pretrained=False)
 
     if not torch.cuda.is_available():
