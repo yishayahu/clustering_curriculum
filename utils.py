@@ -19,12 +19,13 @@ if os.environ["dataset_name"] == "imagenet":
 
 class Cifar10Ds(torch.utils.data.Dataset):
     def __init__(self, data_root, is_train=True, is_eval=False, max_index=5):
-        transforms = tvtf.Compose([tvtf.RandomHorizontalFlip(p=0.5),
-                                   tvtf.RandomVerticalFlip(p=0.5),
-                                   tvtf.RandomRotation(degrees=(-90, 90)),
-                                   tvtf.ColorJitter(brightness=0.2, contrast=0.2),
-                                   tvtf.ToTensor(),
-                                   ])
+        # transforms = tvtf.Compose([tvtf.RandomHorizontalFlip(p=0.5),
+        #                            tvtf.RandomVerticalFlip(p=0.5),
+        #                            tvtf.RandomRotation(degrees=(-90, 90)),
+        #                            tvtf.ColorJitter(brightness=0.2, contrast=0.2),
+        #                            tvtf.ToTensor(),
+        #                            ])
+        transforms = tvtf.Compose([tvtf.ToTensor()])
         self.ds = torchvision.datasets.CIFAR10(
             root=data_root, download=False, train=is_train or is_eval,
             transform=transforms if (is_train or is_eval) else tvtf.ToTensor()  # Convert PIL image to pytorch Tensor
