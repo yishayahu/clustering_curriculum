@@ -46,7 +46,7 @@ class DenseNet(nn.Module):
         self.last_conv = nn.Conv2d(928, n_classes, kernel_size=(1, 1))
         self.relu = nn.ReLU()
         self.maxpool2d = nn.MaxPool2d(kernel_size=2)
-
+        self.softmax  = nn.LogSoftmax(-1)
         # clustering area
         self.cluster_dict = {}
         self.arrays_to_fit = []

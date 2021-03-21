@@ -57,7 +57,7 @@ class Trainer:
                         clustered_sampler.hiererchy = state_dict["hiererchy"]
                         self.train_dls[0] = torch.utils.data.DataLoader(
                             clustered_sampler.ds, batch_size=int(os.environ["batch_size"]), sampler=clustered_sampler,
-                            num_workers=4,pin_memory=True)
+                            num_workers=0,pin_memory=True)
                         self.models[0].clustering_algorithm = None
                     else:
                         print("loading before start clustering")
@@ -208,7 +208,7 @@ class Trainer:
             self.clusters = model.get_clusters()
             self.train_dls[idx] = torch.utils.data.DataLoader(
                 self.clustered_sampler.ds, batch_size=int(os.environ["batch_size"]), sampler=self.clustered_sampler,
-                num_workers=4,pin_memory=True)
+                num_workers=0,pin_memory=True)
             self.train_dls[idx].sampler.create_distribiouns(self.clusters, eval_loss_dict)
 
             model.clustering_algorithm = None
@@ -302,6 +302,7 @@ class Trainer:
         while True:
             if min(self.curr_steps) > self.num_steps:
                 break
+            self.curr_steps[1] =1000000000
             idx = np.argmin(self.curr_steps)
             assert idx in [0, 1]  # todo: remove
 

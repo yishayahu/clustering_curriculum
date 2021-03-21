@@ -1,7 +1,7 @@
 import os
 my_computer = "False"
 os.environ["my_computer"] = my_computer
-os.environ["batch_size"] = "256" if my_computer == "False" else "26"
+os.environ["batch_size"] = "512" if my_computer == "False" else "26"
 os.environ["dataset_name"] = "cifar10"
 os.environ['PYTHONHASHSEED'] = str(101)
 # network_to_use = "DenseNet"
@@ -29,7 +29,7 @@ def seed_everything():
     np.random.seed(seed)
 
 
-def main(exp_name="eval_at_the_end_and_viz",load=False):
+def main(exp_name="cifar_for_images",load=False):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
     seed_everything()
@@ -75,10 +75,13 @@ def main(exp_name="eval_at_the_end_and_viz",load=False):
                                n_clusters=int(os.environ['n_cluster'])),
                            pretrained=False),
                   resnet50(num_classes=n_classes, pretrained=False)]
-        optimizer1 = torch.optim.SGD(models[0].parameters(), lr=0.001, momentum=0.9,nesterov=True, weight_decay=5e-4)
-        scheduler1 =torch.optim.lr_scheduler.CyclicLR(optimizer1, base_lr=0.00001, max_lr=0.01,step_size_up=5000,mode="triangular2")
-        optimizer2 = torch.optim.SGD(models[1].parameters(), lr=0.001, momentum=0.9,nesterov=True, weight_decay=5e-4)
-        scheduler2 =torch.optim.lr_scheduler.CyclicLR(optimizer2, base_lr=0.00001, max_lr=0.01,step_size_up=5000,mode="triangular2")
+        fake = torch.optim.SGD(models[0].parameters(), lr=0.001, momentum=0.9,nesterov=True, weight_decay=5e-4)
+        optimizer1 = torch.optim.Adam(models[0].parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0,
+                                       amsgrad=False)
+        scheduler1 =torch.optim.lr_scheduler.CyclicLR(fake, base_lr=0.00001, max_lr=0.01,step_size_up=5000,mode="triangular2")
+        optimizer2 = torch.optim.Adam(models[1].parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0,
+                                       amsgrad=False)
+        scheduler2 =torch.optim.lr_scheduler.CyclicLR(fake, base_lr=0.00001, max_lr=0.01,step_size_up=5000,mode="triangular2")
     else:
         models = []
 
@@ -149,7 +152,7 @@ def main(exp_name="eval_at_the_end_and_viz",load=False):
         if os.environ["dataset_name"] == "imagenet":
             start_clustering = 20000
         elif os.environ["dataset_name"] == "cifar10":
-            start_clustering = 1000
+            start_clustering = 200
         elif os.environ["dataset_name"] == "tiny_imagenet":
             start_clustering = 3000
 
