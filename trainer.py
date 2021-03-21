@@ -302,7 +302,6 @@ class Trainer:
         while True:
             if min(self.curr_steps) > self.num_steps:
                 break
-            self.curr_steps[1] =1000000000
             idx = np.argmin(self.curr_steps)
             assert idx in [0, 1]  # todo: remove
 
