@@ -9,7 +9,7 @@ import torchvision
 import random
 import torchvision.transforms as tvtf
 import gc
-# from augmentor import MyAugmentor
+from augmentor import MyAugmentor
 
 image_name_to_idx = json.load(open("image_name_to_idx.json"))
 if os.environ["dataset_name"] == "imagenet":

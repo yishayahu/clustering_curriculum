@@ -115,4 +115,5 @@ class DenseNet(nn.Module):
             gc.collect()
         out = self.last_conv(out)
         out = F.adaptive_avg_pool2d(out, (1, 1)).squeeze()
+        out = self.softmax(out)
         return out

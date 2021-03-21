@@ -1,11 +1,11 @@
 import os
 my_computer = "False"
 os.environ["my_computer"] = my_computer
-os.environ["batch_size"] = "512" if my_computer == "False" else "26"
-os.environ["dataset_name"] = "cifar10"
+os.environ["batch_size"] = "128" if my_computer == "False" else "26"
+os.environ["dataset_name"] = "tiny_imagenet"
 os.environ['PYTHONHASHSEED'] = str(101)
-# network_to_use = "DenseNet"
-network_to_use = "ResNet50"
+network_to_use = "DenseNet"
+# network_to_use = "ResNet50"
 optimizer_to_use = ""
 schduler_to_use = ""
 
@@ -65,10 +65,11 @@ def main(exp_name="cifar_for_images",load=False):
         max_lrs = [0.0006,0.00006,0.00006,0.000006]
         step_sizes_up = [4686,4686,3128,1564]
         ths = [0.52,0.61,0.62,0.99]
-        optimizer1 = torch.optim.RMSprop(models[0].parameters(), lr=0.0001, eps=1e-08)
+        optimizer1 = torch.optim.RMSprop(models[0].parameters(), lr=0.0001, eps=1e-08,weight_decay=2e-4)
         scheduler1 = chainedCyclicLr(optimizer=optimizer1,base_lrs=base_lrs,max_lrs=max_lrs,step_sizes_up=step_sizes_up,ths=ths)
-        optimizer2 = torch.optim.RMSprop(models[1].parameters(), lr=0.0001, eps=1e-08)
+        optimizer2 = torch.optim.RMSprop(models[1].parameters(), lr=0.0001, eps=1e-08,weight_decay=2e-4)
         scheduler2 = chainedCyclicLr(optimizer=optimizer2,base_lrs=base_lrs,max_lrs=max_lrs,step_sizes_up=step_sizes_up,ths=ths)
+        loss_func = nn.NLLLoss
     elif network_to_use == "ResNet50":
         models = [resnet50(num_classes=n_classes,
                            clustering_algorithm=clustering_algorithms.KmeanSklearnByBatch(
@@ -82,6 +83,7 @@ def main(exp_name="cifar_for_images",load=False):
         optimizer2 = torch.optim.Adam(models[1].parameters(), lr=0.001, betas=(0.9, 0.999), eps=1e-08, weight_decay=0,
                                        amsgrad=False)
         scheduler2 =torch.optim.lr_scheduler.CyclicLR(fake, base_lr=0.00001, max_lr=0.01,step_size_up=5000,mode="triangular2")
+        loss_func = nn.CrossEntropyLoss
     else:
         models = []
 
@@ -173,7 +175,7 @@ def main(exp_name="cifar_for_images",load=False):
 
 
     trainer = Trainer(models=models, train_dls=train_dls, eval_dls=eval_dls, test_dls=test_dls,
-                      loss_fn=nn.CrossEntropyLoss(), loss_fn_eval=nn.CrossEntropyLoss(reduction="none"),
+                      loss_fn=loss_func(), loss_fn_eval=loss_func(reduction="none"),
                       optimizers=[optimizer1,optimizer2],schedulers=[scheduler1,scheduler2], num_steps=300000, tb=tb, load=load, clustered_sampler=clustered_smapler,
                       start_clustering=start_clustering)
     trainer.train_models()
